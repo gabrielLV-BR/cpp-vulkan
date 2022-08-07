@@ -31,9 +31,11 @@ void VulkanContext::CreateInstance() {
     instanceInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
     instanceInfo.pApplicationInfo = &appInfo;
 
-    VkDebugUtilsMessengerCreateInfoEXT debugMessenger {};
-    PopulateDebugMessenger(debugMessenger);
-    instanceInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT*) &debugMessenger;
+// Setting up debugging
+    VkDebugUtilsMessengerCreateInfoEXT dMessenger {};
+    PopulateDebugMessenger(dMessenger);
+    instanceInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT*) &dMessenger;
+//
 
     auto extensions = VkUtils::GetExtensions();
 
@@ -51,7 +53,6 @@ void VulkanContext::CreateInstance() {
 }
 
 void VulkanContext::CreateDebugMessenger() {
-    
     VkDebugUtilsMessengerCreateInfoEXT info;
     PopulateDebugMessenger(info);
 
