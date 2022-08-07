@@ -97,5 +97,4 @@ void VulkanContext::PickPhysicalDevice() {
     if(physicalDevice == VK_NULL_HANDLE) {
         throw std::runtime_error("No suitable Physical Devices found");
     }
-
 }

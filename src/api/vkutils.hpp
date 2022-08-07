@@ -2,15 +2,30 @@
 
 #include <vector>
 #include <iostream>
+#include <optional>
 
 #define GLFW_INCLUDE_VULKAN
 #include "GLFW/glfw3.h"
+
+struct QueueFamilyIndices {
+    int32_t graphics;
+
+    QueueFamilyIndices() 
+        : graphics(-1)
+    {}
+
+    bool IsComplete() {
+        return graphics != -1;
+    }
+};
 
 namespace VkUtils {
     std::vector<const char*> GetExtensions();
     std::vector<const char*> GetLayers();
 
     bool IsDeviceSuitable(VkPhysicalDevice device);
+
+    QueueFamilyIndices FindQueueFamilies(VkPhysicalDevice device);
 
     // Debug message callback
     VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(

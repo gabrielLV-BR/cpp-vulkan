@@ -48,24 +48,47 @@ std::vector<const char*> VkUtils::GetLayers() {
 }
 
 bool VkUtils::IsDeviceSuitable(VkPhysicalDevice device) {
-    return true;
+    // Properties are basic things like name, device type and API version
+    VkPhysicalDeviceProperties properties;
+    // Features are additional stuff like VR support, geometry shaders and so on
+    VkPhysicalDeviceFeatures features;
+
+    vkGetPhysicalDeviceProperties(device, &properties);
+    vkGetPhysicalDeviceFeatures(device, &features);
+    
+    std::cout << "Available GPU: " << properties.deviceName << "\n";
+
+    // Get queue families
+    auto queueFamilies = VkUtils::FindQueueFamilies(device);
+
+    // We want a discrete GPU with geometry shader support, we could make this
+    // more complex if we wanted, like a ranking system between available devices
+    return properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU &&
+        features.geometryShader == VK_TRUE &&
+        queueFamilies.IsComplete();
 }
 
-// VKAPI_ATTR VkBool32 VKAPI_CALL VkUtils::DebugCallback(
-//     VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
-//     VkDebugUtilsMessageTypeFlagBitsEXT messageType,
-//     const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
-//     void* pUserData
-// ) {
+QueueFamilyIndices VkUtils::FindQueueFamilies(VkPhysicalDevice device) {
+    QueueFamilyIndices indices;
 
-//     const auto WARNING = VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT;
+    uint32_t queueFamilyCount;
 
-//     if(messageSeverity > WARNING) {
-//         std::cout << "[ERROR] " << pCallbackData->pMessage << "\n";
-//     }
+    vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
+    std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
+    vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies.data());
 
-//     return VK_FALSE;
-// }
+    int i = 0;
+    for(auto queueFamily : queueFamilies) {
+        if(queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
+            indices.graphics = i;
+        }
+        if(indices.IsComplete()) break;
+        i++;
+    }
+
+    return indices;
+}
+
 
 VKAPI_ATTR VkBool32 VKAPI_CALL VkUtils::DebugCallback(
     VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
