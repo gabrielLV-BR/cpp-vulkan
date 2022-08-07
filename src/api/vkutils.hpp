@@ -8,7 +8,7 @@
 
 namespace VkUtils {
     std::vector<const char*> GetExtensions();
-    void CheckLayers();
+    std::vector<const char*> GetLayers();
 
     bool IsDeviceSuitable(VkPhysicalDevice device);
 

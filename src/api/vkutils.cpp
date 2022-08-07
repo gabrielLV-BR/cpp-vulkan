@@ -28,7 +28,7 @@ void ListLayers() {
     }
 }
 
-void VkUtils::CheckLayers() {
+std::vector<const char*> VkUtils::GetLayers() {
     ListLayers();
     uint32_t layerCount = 0;
 
@@ -37,17 +37,14 @@ void VkUtils::CheckLayers() {
     vkEnumerateInstanceLayerProperties(&layerCount, layerProperties.data());
 
     for(auto requestedLayer : VALIDATION_LAYERS) {
-        bool found = false;
-
         for(auto availableLayer : layerProperties) {
             if(strcmp(requestedLayer, availableLayer.layerName) == 0) {
-                found = true;
-                break;
+                return { requestedLayer };
             }
         }
-
-        if(!found) { throw std::runtime_error("Requested Validation Layers could not be found"); }
     }
+    
+    throw std::runtime_error("No Validation Layers found");
 }
 
 bool VkUtils::IsDeviceSuitable(VkPhysicalDevice device) {

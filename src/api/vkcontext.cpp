@@ -40,10 +40,10 @@ void VulkanContext::CreateInstance() {
     instanceInfo.enabledExtensionCount = extensions.size();
     instanceInfo.ppEnabledExtensionNames = extensions.data();
 
-    VkUtils::CheckLayers();
+    auto layers = VkUtils::GetLayers();
 
-    instanceInfo.enabledLayerCount = VALIDATION_LAYERS.size();
-    instanceInfo.ppEnabledLayerNames = VALIDATION_LAYERS.data();
+    instanceInfo.enabledLayerCount = layers.size();
+    instanceInfo.ppEnabledLayerNames = layers.data();
 
     if(vkCreateInstance(&instanceInfo, nullptr, &instance) != VK_SUCCESS) {
         throw std::runtime_error("Error when creating Instance");
