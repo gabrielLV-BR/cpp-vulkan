@@ -23,7 +23,7 @@ void VkUtils::ListLayers() {
     std::vector<VkLayerProperties> layerProperties(layerCount);
     vkEnumerateInstanceLayerProperties(&layerCount, layerProperties.data());
 
-    for(auto availableLayer : layerProperties) {
+    for(auto& availableLayer : layerProperties) {
         std::cout << "\t- Available Layer (" << availableLayer.layerName << ")\n";
     }
 }
@@ -35,8 +35,8 @@ std::vector<const char*> VkUtils::GetLayers() {
     std::vector<VkLayerProperties> layerProperties(layerCount);
     vkEnumerateInstanceLayerProperties(&layerCount, layerProperties.data());
 
-    for(auto requestedLayer : VALIDATION_LAYERS) {
-        for(auto availableLayer : layerProperties) {
+    for(auto& requestedLayer : VALIDATION_LAYERS) {
+        for(auto& availableLayer : layerProperties) {
             if(strcmp(requestedLayer, availableLayer.layerName) == 0) {
                 return { requestedLayer };
             }
@@ -44,6 +44,37 @@ std::vector<const char*> VkUtils::GetLayers() {
     }
     
     throw std::runtime_error("No Validation Layers found");
+}
+
+bool DeviceSupportsExtensions(VkPhysicalDevice device) {
+    uint32_t extensionCount;
+
+    vkEnumerateDeviceExtensionProperties(
+        device, nullptr, &extensionCount, nullptr
+    );
+
+    std::vector<VkExtensionProperties> 
+        availableExtensions(extensionCount);
+
+    if (vkEnumerateDeviceExtensionProperties(
+        device, nullptr, &extensionCount, availableExtensions.data()
+    ) != VK_SUCCESS) {
+        std::cout << "Deu pau em tudo\n";
+    }
+
+    for(auto& requiredExtension : DEVICE_EXTENSIONS) {
+        bool found = false;
+        for(auto& availableExtension : availableExtensions) {
+            if(strcmp(requiredExtension, availableExtension.extensionName) == 0) {
+                printf("\t- Found extension %s\n", requiredExtension);
+                found = true;
+                break;
+            }
+        }
+        if(!found) return false;
+    }
+
+    return true;
 }
 
 bool VkUtils::IsDeviceSuitable(
@@ -58,17 +89,32 @@ bool VkUtils::IsDeviceSuitable(
     vkGetPhysicalDeviceProperties(device, &properties);
     vkGetPhysicalDeviceFeatures(device, &features);
     
-#ifndef NDEBUG
-    std::cout << "Available GPU: " << properties.deviceName << "\n";
-#endif
-
     // Get queue families
     auto queueFamilies = VkUtils::FindQueueFamilies(device, surface);
+    bool extensionsSupported = DeviceSupportsExtensions(device);
+
+    bool swapchainAdequate = false;
+    if(extensionsSupported) {
+        auto swapchainDetails = 
+            VkUtils::FindSwapchainSupport(device, surface);
+
+        swapchainAdequate = 
+            !swapchainDetails.formats.empty() &&
+            !swapchainDetails.presentModes.empty();
+    }
+
+#ifndef NDEBUG
+    std::cout << "Available GPU: " << properties.deviceName << "\n";
+    std::cout << "Device " << 
+        (extensionsSupported ? "" : "DOES NOT ")
+    << "support extensions\n";
+#endif
 
     // We want a discrete GPU with geometry shader support, we could make this
     // more complex if we wanted, like a ranking system between available devices
-    return properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU &&
-        features.geometryShader == VK_TRUE &&
+    return 
+        extensionsSupported &&
+        swapchainAdequate   &&
         queueFamilies.IsComplete();
 }
 
@@ -78,7 +124,6 @@ QueueFamilyIndices VkUtils::FindQueueFamilies(
     VkSurfaceKHR surface
 ) {
     static optional<QueueFamilyIndices> indices;
-    QueueFamilyIndices _indices;
 
 #ifndef NDEBUG
     std::cout << "Requested for queue families " << reqs++ << " times\n";
@@ -91,6 +136,7 @@ QueueFamilyIndices VkUtils::FindQueueFamilies(
     std::cout << "Searched for queue families " << times++ << " times\n";
 #endif
 
+    QueueFamilyIndices _indices;
     uint32_t queueFamilyCount;
 
     vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
@@ -98,7 +144,7 @@ QueueFamilyIndices VkUtils::FindQueueFamilies(
     vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies.data());
 
     int i = 0;
-    for(auto queueFamily : queueFamilies) {
+    for(auto& queueFamily : queueFamilies) {
         if(queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
             _indices.graphics = i;
         }
@@ -118,6 +164,56 @@ QueueFamilyIndices VkUtils::FindQueueFamilies(
     return indices.value();
 }
 
+SwapchainSupport VkUtils::FindSwapchainSupport(
+    VkPhysicalDevice device,
+    VkSurfaceKHR surface
+) {
+    static optional<SwapchainSupport> _support;
+
+    if(_support.has_value()) return _support.value();
+
+    SwapchainSupport support{};
+
+    { // Surface capabilities
+        vkGetPhysicalDeviceSurfaceCapabilitiesKHR(
+            device, surface, &support.capabilites
+        );
+    }
+
+    { // Surface Formats
+        uint32_t formatCount;
+        vkGetPhysicalDeviceSurfaceFormatsKHR(
+            device, surface, &formatCount, nullptr
+        );
+
+        if(formatCount != 0) {
+            support.formats.resize(formatCount);
+            vkGetPhysicalDeviceSurfaceFormatsKHR(
+                device, surface, &formatCount, support.formats.data()
+            );
+        }
+    }
+
+    { // Present Modes
+        uint32_t modeCount;
+        vkGetPhysicalDeviceSurfacePresentModesKHR(
+            device, surface, &modeCount, nullptr
+        );
+
+        if(modeCount != 0) {
+            support.presentModes.resize(modeCount);
+            vkGetPhysicalDeviceSurfacePresentModesKHR(
+                device, surface, &modeCount, support.presentModes.data()
+            );
+        }
+    }
+
+    _support.emplace(support);
+
+    return support;
+}
+
+// DEBUG
 
 VKAPI_ATTR VkBool32 VKAPI_CALL VkUtils::DebugCallback(
     VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,

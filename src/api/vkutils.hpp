@@ -19,6 +19,12 @@ struct QueueFamilyIndices {
     }
 };
 
+struct SwapchainSupport {
+    VkSurfaceCapabilitiesKHR capabilites;
+    std::vector<VkSurfaceFormatKHR> formats;
+    std::vector<VkPresentModeKHR> presentModes;
+};
+
 namespace VkUtils {
     std::vector<const char*> GetExtensions();
     std::vector<const char*> GetLayers();
@@ -26,6 +32,7 @@ namespace VkUtils {
     bool IsDeviceSuitable(VkPhysicalDevice device, VkSurfaceKHR surface);
 
     QueueFamilyIndices FindQueueFamilies(VkPhysicalDevice device, VkSurfaceKHR surface);
+    SwapchainSupport FindSwapchainSupport(VkPhysicalDevice device, VkSurfaceKHR surface);
 
     void ListLayers();
 

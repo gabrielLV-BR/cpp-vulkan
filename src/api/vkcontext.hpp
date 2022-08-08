@@ -15,6 +15,9 @@ const std::vector<const char*> VALIDATION_LAYERS = {
     const bool useValidationLayers = true;
 #endif
 
+const std::vector<const char*> DEVICE_EXTENSIONS = {
+    VK_KHR_SWAPCHAIN_EXTENSION_NAME
+};
 
 class VulkanContext {
 private:
@@ -24,6 +27,7 @@ private:
     VkPhysicalDevice physicalDevice;
 
     VkSurfaceKHR surface;
+    VkSwapchainKHR swapchain;
     // Queues
     VkQueue graphicsQueue;
     VkQueue presentQueue;
@@ -43,6 +47,7 @@ private:
     void CreateLogicalDevice();
     void GetQueues();
     void CreateSurface(GLFWwindow*);
+    void CreateSwapchain(GLFWwindow*);
     // Debug
     void CreateDebugMessenger();
     void PopulateDebugMessenger(VkDebugUtilsMessengerCreateInfoEXT&);

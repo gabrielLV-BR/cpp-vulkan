@@ -1,7 +1,13 @@
 #include "vkcontext.hpp"
 #include "vkutils.hpp"
+
 #include <stdexcept>
+#include <iterator>
 #include <set>
+
+#include <limits>
+#include <algorithm>
+#include <cstdint>
 
 VulkanContext::VulkanContext() {}
 
@@ -11,6 +17,7 @@ VulkanContext::VulkanContext(GLFWwindow *window)
     CreateSurface(window);
     PickPhysicalDevice();
     CreateLogicalDevice();
+    CreateSwapchain(window);
 }
 
 void VulkanContext::Destroy()
@@ -19,6 +26,7 @@ void VulkanContext::Destroy()
     {
         VkUtils::DestroyDebugMessenger(instance, debugMessenger, nullptr);
     }
+    vkDestroySwapchainKHR(device, swapchain, nullptr);
     vkDestroyDevice(device, nullptr);
     vkDestroySurfaceKHR(instance, surface, nullptr);
     vkDestroyInstance(instance, nullptr);
@@ -172,7 +180,10 @@ void VulkanContext::CreateLogicalDevice()
     deviceInfo.pQueueCreateInfos = queueCreateInfos.data();
     deviceInfo.pEnabledFeatures = &features;
 
-    deviceInfo.enabledExtensionCount = 0; // We'll come back for these
+    deviceInfo.enabledExtensionCount = 
+        static_cast<uint32_t>(DEVICE_EXTENSIONS.size()); // We'll come back for these
+    deviceInfo.ppEnabledExtensionNames =
+        DEVICE_EXTENSIONS.data();
 
     // In modern Vulkan, Device layers are ignored, as there's
     // no longer a distinction between Device and Instance layers
@@ -207,4 +218,127 @@ void VulkanContext::CreateLogicalDevice()
         indices.present.value(),
         0 /* because we're only using one queue for this family */,
         &presentQueue);
+}
+
+void VulkanContext::CreateSwapchain(GLFWwindow* window) {
+    auto swapchainDetails = VkUtils::FindSwapchainSupport(physicalDevice, surface);
+
+    VkSwapchainCreateInfoKHR swapchainInfo{};
+
+    swapchainInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
+    swapchainInfo.clipped = VK_TRUE;
+    swapchainInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+    swapchainInfo.surface = surface;
+
+    // We need 3 informations to create the swapchain
+
+    VkSurfaceFormatKHR surfaceFormat;
+    { // Surface format
+        // Default, in case we don't find any
+        surfaceFormat = swapchainDetails.formats[0];
+        // Search for the desired one
+        for(auto& format : swapchainDetails.formats) {
+            if(format.format == VK_FORMAT_R8G8B8A8_SRGB &&
+            format.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
+                surfaceFormat = format;
+                break;
+            }
+        }
+    }
+
+    VkPresentModeKHR presentMode;
+    { // Present mode
+        // Default
+        presentMode = swapchainDetails.presentModes[0];
+        // Search for desired
+        for(auto& mode : swapchainDetails.presentModes) {
+            if (
+                mode == VK_PRESENT_MODE_MAILBOX_KHR ||
+                mode == VK_PRESENT_MODE_FIFO_KHR
+            ) {
+                presentMode = mode;
+                break;
+            }
+        }
+    }
+
+    VkExtent2D extent;
+    { // Extent2D
+        auto& cap = swapchainDetails.capabilites;
+        extent = cap.currentExtent;
+
+        if(
+            cap.currentExtent.width == 
+            std::numeric_limits<uint32_t>::max()
+        ) {
+            int width, height;
+
+            glfwGetFramebufferSize(window, &width, &height);
+
+            extent = {
+                std::clamp(
+                    static_cast<uint32_t>(width),
+                    cap.minImageExtent.width,
+                    cap.maxImageExtent.width
+                ),
+                std::clamp(
+                    static_cast<uint32_t>(height),
+                    cap.minImageExtent.height,
+                    cap.maxImageExtent.height
+                )
+            };
+        }
+    }
+
+    swapchainInfo.imageExtent = extent;
+    swapchainInfo.presentMode = presentMode;
+    swapchainInfo.imageFormat = surfaceFormat.format;
+    swapchainInfo.imageColorSpace = surfaceFormat.colorSpace;
+
+    auto imageCount = std::clamp(
+        swapchainDetails.capabilites.minImageCount + 1,
+        swapchainDetails.capabilites.minImageCount,
+        swapchainDetails.capabilites.maxImageCount
+    );
+
+    swapchainInfo.minImageCount = imageCount;
+    swapchainInfo.imageArrayLayers = 1;
+    swapchainInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+
+    auto queueIndices = VkUtils::FindQueueFamilies(physicalDevice, surface);
+
+    uint32_t queueFamilyIndices[] = {
+        queueIndices.graphics.value(), queueIndices.present.value()
+    };
+
+    if(queueFamilyIndices[0] == queueFamilyIndices[1]) {
+        // Graphics and Present are the same queue
+        swapchainInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+        swapchainInfo.queueFamilyIndexCount = 0;
+        swapchainInfo.pQueueFamilyIndices = nullptr;
+    } else {
+        // Graphics and Present are NOT the same queue
+        swapchainInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
+        swapchainInfo.queueFamilyIndexCount = 2;
+        swapchainInfo.pQueueFamilyIndices = queueFamilyIndices;
+    }
+    /*
+        Image sharing modes:
+        - EXCLUSIVE -> An image is owned by one queue family
+            at a time and ownership must be manually transferred, 
+            best performance
+        - CONCURRENT -> An image can be accessed by many queue
+            family concurrently 
+    */
+
+    swapchainInfo.preTransform = 
+        swapchainDetails.capabilites.currentTransform;
+
+    swapchainInfo.oldSwapchain = VK_NULL_HANDLE;
+
+    if(vkCreateSwapchainKHR(
+        device, &swapchainInfo, nullptr, &swapchain
+    ) != VK_SUCCESS) {
+        throw std::runtime_error("Error when creating Swapchain!");
+    }
 }
