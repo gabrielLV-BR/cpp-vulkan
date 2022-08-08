@@ -2,20 +2,20 @@
 
 #include <vector>
 #include <iostream>
-#include <optional>
-
 #define GLFW_INCLUDE_VULKAN
 #include "GLFW/glfw3.h"
 
-struct QueueFamilyIndices {
-    int32_t graphics;
+#include "utils/option.hpp"
 
-    QueueFamilyIndices() 
-        : graphics(-1)
-    {}
+using std::experimental::optional;
+struct QueueFamilyIndices {
+    optional<uint32_t> graphics;
+    optional<uint32_t> present;
+
+    QueueFamilyIndices() {}
 
     bool IsComplete() {
-        return graphics != -1;
+        return graphics.has_value() && present.has_value();
     }
 };
 
@@ -23,9 +23,9 @@ namespace VkUtils {
     std::vector<const char*> GetExtensions();
     std::vector<const char*> GetLayers();
 
-    bool IsDeviceSuitable(VkPhysicalDevice device);
+    bool IsDeviceSuitable(VkPhysicalDevice device, VkSurfaceKHR surface);
 
-    QueueFamilyIndices FindQueueFamilies(VkPhysicalDevice device);
+    QueueFamilyIndices FindQueueFamilies(VkPhysicalDevice device, VkSurfaceKHR surface);
 
     // Debug message callback
     VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(

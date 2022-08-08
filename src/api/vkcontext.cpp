@@ -1,11 +1,13 @@
 #include "vkcontext.hpp"
 #include "vkutils.hpp"
 #include <stdexcept>
+#include <set>
 
 VulkanContext::VulkanContext() {}
 
 VulkanContext::VulkanContext(GLFWwindow* window) {
     CreateInstance();
+    CreateSurface(window);
     PickPhysicalDevice();
 }
 
@@ -14,6 +16,7 @@ void VulkanContext::Destroy() {
         VkUtils::DestroyDebugMessenger(instance, debugMessenger, nullptr);
     }
     vkDestroyDevice(device, nullptr);
+    vkDestroySurfaceKHR(instance, surface, nullptr);
     vkDestroyInstance(instance, nullptr);
 }
 
@@ -53,6 +56,12 @@ void VulkanContext::CreateInstance() {
     }
 }
 
+void VulkanContext::CreateSurface(GLFWwindow* window) {
+    if(glfwCreateWindowSurface(instance, window, nullptr, &surface) != VK_SUCCESS) {
+        throw std::runtime_error("Error when creating surface");
+    }
+}
+
 void VulkanContext::CreateDebugMessenger() {
     VkDebugUtilsMessengerCreateInfoEXT info;
     PopulateDebugMessenger(info);
@@ -89,7 +98,7 @@ void VulkanContext::PickPhysicalDevice() {
     vkEnumeratePhysicalDevices(instance, &physicalDeviceCount, physicalDevices.data());
 
     for(auto device : physicalDevices) {
-        if(VkUtils::IsDeviceSuitable(device)) {
+        if(VkUtils::IsDeviceSuitable(device, surface)) {
             physicalDevice = device;
             break;
         }
@@ -101,14 +110,30 @@ void VulkanContext::PickPhysicalDevice() {
 }
 
 void VulkanContext::CreateLogicalDevice() {
-    auto queueFamilies = VkUtils::FindQueueFamilies(physicalDevice);
+    auto queueFamilies = VkUtils::FindQueueFamilies(physicalDevice, surface);
 
-    VkDeviceQueueCreateInfo queueInfo{};
-    queueInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-    queueInfo.queueCount = 1;
-    queueInfo.queueFamilyIndex = queueFamilies.graphics;
+// Since we have multiple queues, we must provide an
+// array of queue infos.
+// As shown in LearnVulkan.com, a `set` is a nice way
+// to make this more compact AND remove duplicate indices
+// (which is likely to happen with `graphics` and `present`)
+
+    std::vector<VkDeviceQueueCreateInfo> queueCreateInfos(2);
+    std::set<uint32_t> uniqueFamilyIndices{
+        queueFamilies.graphics.value(), queueFamilies.present.value()
+    };
+
     float priority = 1.0;
-    queueInfo.pQueuePriorities = &priority;
+    for(uint32_t familyIndex : uniqueFamilyIndices) {
+        VkDeviceQueueCreateInfo queueInfo{};
+        queueInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+        queueInfo.queueCount = 1;
+        queueInfo.queueFamilyIndex = familyIndex;
+        queueInfo.pQueuePriorities = &priority;
+
+        queueCreateInfos.push_back(queueInfo);
+    }
+
 // Here we specify features we want to have
 // They are all initialized to VK_FALSE like this
     VkPhysicalDeviceFeatures features{};
@@ -117,9 +142,9 @@ void VulkanContext::CreateLogicalDevice() {
     VkDeviceCreateInfo deviceInfo{};
     deviceInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
 
-    deviceInfo.queueCreateInfoCount = 1;
-    deviceInfo.pQueueCreateInfos = &queueInfo;
-    deviceInfo.pEnabledFeatures  = &features;
+    deviceInfo.queueCreateInfoCount = queueCreateInfos.size();
+    deviceInfo.pQueueCreateInfos    = queueCreateInfos.data();
+    deviceInfo.pEnabledFeatures     = &features;
 
     deviceInfo.enabledExtensionCount = 0; // We'll come back for these
 
@@ -141,8 +166,15 @@ void VulkanContext::CreateLogicalDevice() {
 
     vkGetDeviceQueue(
         device, 
-        queueFamilies.graphics, 
+        queueFamilies.graphics.value(), 
         0 /* because we're only using one queue for this family */, 
         &graphicsQueue
+    );
+
+    vkGetDeviceQueue(
+        device, 
+        queueFamilies.present.value(), 
+        0 /* because we're only using one queue for this family */, 
+        &presentQueue
     );
 }

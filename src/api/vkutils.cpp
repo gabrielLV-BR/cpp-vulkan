@@ -47,7 +47,10 @@ std::vector<const char*> VkUtils::GetLayers() {
     throw std::runtime_error("No Validation Layers found");
 }
 
-bool VkUtils::IsDeviceSuitable(VkPhysicalDevice device) {
+bool VkUtils::IsDeviceSuitable(
+    VkPhysicalDevice device,
+    VkSurfaceKHR surface
+) {
     // Properties are basic things like name, device type and API version
     VkPhysicalDeviceProperties properties;
     // Features are additional stuff like VR support, geometry shaders and so on
@@ -56,10 +59,12 @@ bool VkUtils::IsDeviceSuitable(VkPhysicalDevice device) {
     vkGetPhysicalDeviceProperties(device, &properties);
     vkGetPhysicalDeviceFeatures(device, &features);
     
+#ifndef NDEBUG
     std::cout << "Available GPU: " << properties.deviceName << "\n";
+#endif
 
     // Get queue families
-    auto queueFamilies = VkUtils::FindQueueFamilies(device);
+    auto queueFamilies = VkUtils::FindQueueFamilies(device, surface);
 
     // We want a discrete GPU with geometry shader support, we could make this
     // more complex if we wanted, like a ranking system between available devices
@@ -68,8 +73,24 @@ bool VkUtils::IsDeviceSuitable(VkPhysicalDevice device) {
         queueFamilies.IsComplete();
 }
 
-QueueFamilyIndices VkUtils::FindQueueFamilies(VkPhysicalDevice device) {
-    QueueFamilyIndices indices;
+QueueFamilyIndices VkUtils::FindQueueFamilies(
+    VkPhysicalDevice device,
+    VkSurfaceKHR surface
+) {
+    static optional<QueueFamilyIndices> indices;
+    QueueFamilyIndices _indices;
+
+#ifndef NDEBUG
+    static int times = 1, reqs = 1;
+    std::cout << "\nRequested for queue families " << reqs++ << " times\n";
+#endif
+
+    // Prevents recalculations
+    if(indices.has_value()) return indices.value();
+
+#ifndef NDEBUG
+    std::cout << "Searched for queue families " << times++ << " times\n\n";
+#endif
 
     uint32_t queueFamilyCount;
 
@@ -80,13 +101,22 @@ QueueFamilyIndices VkUtils::FindQueueFamilies(VkPhysicalDevice device) {
     int i = 0;
     for(auto queueFamily : queueFamilies) {
         if(queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
-            indices.graphics = i;
+            _indices.graphics = i;
         }
-        if(indices.IsComplete()) break;
+
+        VkBool32 presentSupport = VK_FALSE;
+        vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, &presentSupport);
+        if(presentSupport == VK_TRUE) {
+            _indices.present = i;
+        }
+
+        if(_indices.IsComplete()) break;
         i++;
     }
 
-    return indices;
+    indices.emplace(_indices);
+
+    return indices.value();
 }
 
 
@@ -123,5 +153,7 @@ VkResult VkUtils::DestroyDebugMessenger(VkInstance instance, VkDebugUtilsMesseng
     auto func = (PFN_vkDestroyDebugUtilsMessengerEXT) vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
     if (func != nullptr) {
         func(instance, debugMessenger, pAllocator);
+        return VK_SUCCESS;
     }
+    return VK_ERROR_UNKNOWN;
 }

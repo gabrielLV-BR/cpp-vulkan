@@ -22,8 +22,11 @@ private:
     VkPhysicalDevice physicalDevice;
     VkDevice device;
     VkDebugUtilsMessengerEXT debugMessenger;
+
+    VkSurfaceKHR surface;
     // Queues
     VkQueue graphicsQueue;
+    VkQueue presentQueue;
 public:
     VulkanContext();
     VulkanContext(GLFWwindow* window);
@@ -34,6 +37,7 @@ private:
     void PickPhysicalDevice();
     void CreateLogicalDevice();
     void GetQueues();
+    void CreateSurface(GLFWwindow*);
     // Debug
     void CreateDebugMessenger();
     void PopulateDebugMessenger(VkDebugUtilsMessengerCreateInfoEXT&);

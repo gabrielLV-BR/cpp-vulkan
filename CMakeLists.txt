@@ -9,7 +9,8 @@ add_executable(
     "src/main.cpp"
     "src/api/vkcontext.cpp"
     "src/api/vkutils.cpp"
+    "src/utils/option.hpp"
 )
 
 target_link_libraries(${PROJECT_NAME} PRIVATE glfw vulkan)
-target_include_directories(${PROJECT_NAME} PRIVATE modules/)
+target_include_directories(${PROJECT_NAME} PRIVATE modules/ src/)
