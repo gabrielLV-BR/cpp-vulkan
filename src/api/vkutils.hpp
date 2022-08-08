@@ -27,6 +27,8 @@ namespace VkUtils {
 
     QueueFamilyIndices FindQueueFamilies(VkPhysicalDevice device, VkSurfaceKHR surface);
 
+    void ListLayers();
+
     // Debug message callback
     VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(
         VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,

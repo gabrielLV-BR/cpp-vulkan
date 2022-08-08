@@ -19,14 +19,19 @@ const std::vector<const char*> VALIDATION_LAYERS = {
 class VulkanContext {
 private:
     VkInstance instance;
-    VkPhysicalDevice physicalDevice;
+
     VkDevice device;
-    VkDebugUtilsMessengerEXT debugMessenger;
+    VkPhysicalDevice physicalDevice;
 
     VkSurfaceKHR surface;
     // Queues
     VkQueue graphicsQueue;
     VkQueue presentQueue;
+    // Debug
+    VkDebugUtilsMessengerEXT debugMessenger;
+
+    std::vector<const char*> activeLayers;
+
 public:
     VulkanContext();
     VulkanContext(GLFWwindow* window);

@@ -17,7 +17,7 @@ std::vector<const char*> VkUtils::GetExtensions() {
     return exts;
 }
 
-void ListLayers() {
+void VkUtils::ListLayers() {
     uint32_t layerCount = 0;
     vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
     std::vector<VkLayerProperties> layerProperties(layerCount);
@@ -29,7 +29,6 @@ void ListLayers() {
 }
 
 std::vector<const char*> VkUtils::GetLayers() {
-    ListLayers();
     uint32_t layerCount = 0;
 
     vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
@@ -73,6 +72,7 @@ bool VkUtils::IsDeviceSuitable(
         queueFamilies.IsComplete();
 }
 
+int times = 1, reqs = 1;
 QueueFamilyIndices VkUtils::FindQueueFamilies(
     VkPhysicalDevice device,
     VkSurfaceKHR surface
@@ -81,15 +81,14 @@ QueueFamilyIndices VkUtils::FindQueueFamilies(
     QueueFamilyIndices _indices;
 
 #ifndef NDEBUG
-    static int times = 1, reqs = 1;
-    std::cout << "\nRequested for queue families " << reqs++ << " times\n";
+    std::cout << "Requested for queue families " << reqs++ << " times\n";
 #endif
 
     // Prevents recalculations
     if(indices.has_value()) return indices.value();
 
 #ifndef NDEBUG
-    std::cout << "Searched for queue families " << times++ << " times\n\n";
+    std::cout << "Searched for queue families " << times++ << " times\n";
 #endif
 
     uint32_t queueFamilyCount;
