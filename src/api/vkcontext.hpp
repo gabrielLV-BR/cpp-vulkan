@@ -39,6 +39,7 @@ private:
 
     VkSurfaceKHR surface;
     Swapchain swapchain;
+    std::vector<VkImageView> imageViews;
 
     // Queues
     VkQueue graphicsQueue;
@@ -60,6 +61,7 @@ private:
     void GetQueues();
     void CreateSurface(GLFWwindow*);
     void CreateSwapchain(GLFWwindow*);
+    void CreateImageView();
     // Debug
     void CreateDebugMessenger();
     void PopulateDebugMessenger(VkDebugUtilsMessengerCreateInfoEXT&);

@@ -26,6 +26,11 @@ void VulkanContext::Destroy()
     {
         VkUtils::DestroyDebugMessenger(instance, debugMessenger, nullptr);
     }
+
+    for(auto& imageView : imageViews) {
+        vkDestroyImageView(device, imageView, nullptr);
+    }
+
     swapchain.Destroy(device);
     vkDestroyDevice(device, nullptr);
     vkDestroySurfaceKHR(instance, surface, nullptr);
@@ -357,4 +362,40 @@ void VulkanContext::CreateSwapchain(GLFWwindow* window) {
 
     swapchain.extent = extent;
     swapchain.format = surfaceFormat.format;
+}
+
+void VulkanContext::CreateImageView() {
+    imageViews.resize(swapchain.images.size());
+
+    for(int i = 0; i < imageViews.size(); i++) {
+        auto& image = swapchain.images[i];
+
+        VkImageViewCreateInfo imageInfo{};
+
+        imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+        imageInfo.format = swapchain.format;
+        imageInfo.image = image;
+        imageInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+
+        imageInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+        imageInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+        imageInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+        imageInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
+
+        imageInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        imageInfo.subresourceRange.layerCount = 1;
+        imageInfo.subresourceRange.levelCount = 1;
+        imageInfo.subresourceRange.baseMipLevel = 0;
+        imageInfo.subresourceRange.baseArrayLayer = 0;
+
+        if(vkCreateImageView(
+            device, 
+            &imageInfo, 
+            nullptr, 
+            &imageViews[i]) != VK_SUCCESS
+        ) {
+            throw std::runtime_error("Error when creating Image View");
+        }
+    }
+
 }
