@@ -26,7 +26,7 @@ void VulkanContext::Destroy()
     {
         VkUtils::DestroyDebugMessenger(instance, debugMessenger, nullptr);
     }
-    vkDestroySwapchainKHR(device, swapchain, nullptr);
+    swapchain.Destroy(device);
     vkDestroyDevice(device, nullptr);
     vkDestroySurfaceKHR(instance, surface, nullptr);
     vkDestroyInstance(instance, nullptr);
@@ -337,8 +337,24 @@ void VulkanContext::CreateSwapchain(GLFWwindow* window) {
     swapchainInfo.oldSwapchain = VK_NULL_HANDLE;
 
     if(vkCreateSwapchainKHR(
-        device, &swapchainInfo, nullptr, &swapchain
+        device, &swapchainInfo, nullptr, &swapchain.chain
     ) != VK_SUCCESS) {
         throw std::runtime_error("Error when creating Swapchain!");
     }
+
+    // Now, load all the images in that habitual way
+
+    uint32_t swapchainImageCount;
+
+    vkGetSwapchainImagesKHR(device, swapchain.chain, &swapchainImageCount, nullptr);
+    swapchain.images.resize(swapchainImageCount);
+    vkGetSwapchainImagesKHR(
+        device, 
+        swapchain.chain, 
+        &swapchainImageCount, 
+        swapchain.images.data()
+    );
+
+    swapchain.extent = extent;
+    swapchain.format = surfaceFormat.format;
 }

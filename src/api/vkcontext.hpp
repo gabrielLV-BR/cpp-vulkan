@@ -19,6 +19,17 @@ const std::vector<const char*> DEVICE_EXTENSIONS = {
     VK_KHR_SWAPCHAIN_EXTENSION_NAME
 };
 
+struct Swapchain {
+    VkSwapchainKHR chain;
+    std::vector<VkImage> images;
+    VkFormat format;
+    VkExtent2D extent;
+
+    void Destroy(VkDevice device) {
+        vkDestroySwapchainKHR(device, chain, nullptr);
+    }
+};
+
 class VulkanContext {
 private:
     VkInstance instance;
@@ -27,13 +38,14 @@ private:
     VkPhysicalDevice physicalDevice;
 
     VkSurfaceKHR surface;
-    VkSwapchainKHR swapchain;
+    Swapchain swapchain;
+
     // Queues
     VkQueue graphicsQueue;
     VkQueue presentQueue;
+
     // Debug
     VkDebugUtilsMessengerEXT debugMessenger;
-
     std::vector<const char*> activeLayers;
 
 public:
