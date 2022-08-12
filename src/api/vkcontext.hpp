@@ -77,6 +77,8 @@ private:
     void CreateFramebuffers();
     void CreateCommandPool();
     void AllocateCommandBuffer();
+    // For now, we'll leave this here
+    void RecordCommand(VkCommandBuffer&, uint32_t);
     // Debug
     void CreateDebugMessenger();
     void PopulateDebugMessenger(VkDebugUtilsMessengerCreateInfoEXT&);

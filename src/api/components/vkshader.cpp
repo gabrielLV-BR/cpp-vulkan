@@ -1,13 +1,16 @@
 #include "vkshader.hpp"
 #include "utils/file.hpp"
+#include "utils/debug.hpp"
 
 ShaderModule::ShaderModule() {}
 
 ShaderModule::ShaderModule(const char* path, VkDevice device) {
-  auto source = FileUtils::ReadBinary(path);
+  // auto source = FileUtils::ReadBinary(path);
+  std::vector<char> source = {};
 
-  if(source.size() == 0) 
-    throw std::runtime_error("Error creating Shader: Invalid source");
+  ASSERT(source.size() > 0, "Invalid shader source");
+  // if(source.size() == 0) 
+  //   throw std::runtime_error("Error creating Shader: Invalid source");
 
   VkShaderModuleCreateInfo shaderInfo{};
 
@@ -17,15 +20,14 @@ ShaderModule::ShaderModule(const char* path, VkDevice device) {
   // change the data.
   shaderInfo.pCode = reinterpret_cast<const uint32_t*>(source.data());
 
-  if(
+  VK_ASSERT(
     vkCreateShaderModule(
       device, 
       &shaderInfo, 
       nullptr, 
       &module
-    ) != VK_SUCCESS) {
-    throw std::runtime_error("Failure on creating shader module");
-  }
+    )
+  );
 }
 
 void ShaderModule::Destroy(VkDevice device) {

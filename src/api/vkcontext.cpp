@@ -1,5 +1,6 @@
 #include "vkcontext.hpp"
 #include "vkutils.hpp"
+#include "utils/debug.hpp"
 
 #include <stdexcept>
 #include <iterator>
@@ -81,18 +82,16 @@ void VulkanContext::CreateInstance()
     instanceInfo.enabledLayerCount = activeLayers.size();
     instanceInfo.ppEnabledLayerNames = activeLayers.data();
 
-    if (vkCreateInstance(&instanceInfo, nullptr, &instance) != VK_SUCCESS)
-    {
-        throw std::runtime_error("Error when creating Instance");
-    }
+    VK_ASSERT(
+        vkCreateInstance(&instanceInfo, nullptr, &instance)
+    );
 }
 
 void VulkanContext::CreateSurface(GLFWwindow *window)
 {
-    if (glfwCreateWindowSurface(instance, window, nullptr, &surface) != VK_SUCCESS)
-    {
-        throw std::runtime_error("Error when creating surface");
-    }
+    VK_ASSERT(
+        glfwCreateWindowSurface(instance, window, nullptr, &surface)
+    );
 }
 
 void VulkanContext::CreateDebugMessenger()
@@ -100,10 +99,9 @@ void VulkanContext::CreateDebugMessenger()
     VkDebugUtilsMessengerCreateInfoEXT info;
     PopulateDebugMessenger(info);
 
-    if (VkUtils::CreateDebugMessenger(instance, &info, nullptr, &debugMessenger) != VK_SUCCESS)
-    {
-        throw std::runtime_error("Error when creating VulkanContext's Debug Messenger");
-    }
+    VK_ASSERT(
+        VkUtils::CreateDebugMessenger(instance, &info, nullptr, &debugMessenger)
+    );
 }
 
 void VulkanContext::PopulateDebugMessenger(VkDebugUtilsMessengerCreateInfoEXT &debugMessenger)
@@ -210,27 +208,28 @@ void VulkanContext::CreateLogicalDevice()
         deviceInfo.enabledLayerCount = 0;
     }
 
-    if ( 
+    VK_ASSERT( 
         vkCreateDevice(
             physicalDevice, 
             &deviceInfo, 
             nullptr, 
             &device
-        ) != VK_SUCCESS ){
-        throw std::runtime_error("Error when creating Logical Device");
-    }
+        ) 
+    );
 
     vkGetDeviceQueue(
         device,
         familyIndices.graphics.value(),
         0 /* because we're only using one queue for this family */,
-        &graphicsQueue);
+        &graphicsQueue
+    );
 
     vkGetDeviceQueue(
         device,
         familyIndices.present.value(),
         0 /* because we're only using one queue for this family */,
-        &presentQueue);
+        &presentQueue
+    );
 }
 
 void VulkanContext::CreateSwapchain(GLFWwindow* window) {
@@ -349,11 +348,11 @@ void VulkanContext::CreateSwapchain(GLFWwindow* window) {
 
     swapchainInfo.oldSwapchain = VK_NULL_HANDLE;
 
-    if(vkCreateSwapchainKHR(
-        device, &swapchainInfo, nullptr, &swapchain.chain
-    ) != VK_SUCCESS) {
-        throw std::runtime_error("Error when creating Swapchain!");
-    }
+    VK_ASSERT(
+        vkCreateSwapchainKHR(
+            device, &swapchainInfo, nullptr, &swapchain.chain
+        )
+    );
 
     // Now, load all the images in that habitual way
 
@@ -396,14 +395,14 @@ void VulkanContext::CreateImageView() {
         imageInfo.subresourceRange.baseMipLevel = 0;
         imageInfo.subresourceRange.baseArrayLayer = 0;
 
-        if(vkCreateImageView(
-            device, 
-            &imageInfo, 
-            nullptr, 
-            &imageViews[i]) != VK_SUCCESS
-        ) {
-            throw std::runtime_error("Error when creating Image View");
-        }
+        VK_ASSERT(
+            vkCreateImageView(
+                device, 
+                &imageInfo, 
+                nullptr, 
+                &imageViews[i]
+            )
+        );
     }
 
 }
@@ -450,15 +449,14 @@ void VulkanContext::CreateFramebuffers() {
 
         frameBufferInfo.renderPass = pipeline.renderPass;
 
-        if(
+        VK_ASSERT(
             vkCreateFramebuffer(
                 device, 
                 &frameBufferInfo, 
                 nullptr,
                 &frameBuffers[i]
-            ) != VK_SUCCESS) {
-            throw std::runtime_error("Failure on creating Framebuffer");
-        }
+            )
+        );
     }
 }
 
@@ -472,7 +470,9 @@ void VulkanContext::CreateCommandPool() {
     commandPoolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
     commandPoolInfo.queueFamilyIndex = familyIndices.graphics.value();
 
-    vkCreateCommandPool(device, nullptr, nullptr, &commandPool);
+    VK_ASSERT(
+        vkCreateCommandPool(device, nullptr, nullptr, &commandPool)
+    );
 }
 
 void VulkanContext::AllocateCommandBuffer() {
@@ -487,7 +487,58 @@ void VulkanContext::AllocateCommandBuffer() {
     // Here we specify the ammount of commad buffers...
     commandBufferInfo.commandBufferCount = 1;
     //                         ...we're allocatting here in &commandBuffer
-    if(vkAllocateCommandBuffers(device, &commandBufferInfo, &commandBuffer) != VK_SUCCESS) {
-        throw std::runtime_error("Error on allocating CommandBuffers");
-    }
+    VK_ASSERT(
+        vkAllocateCommandBuffers(device, &commandBufferInfo, &commandBuffer)
+    );
+}
+
+void VulkanContext::RecordCommand(VkCommandBuffer& command, uint32_t imageIndex) {
+
+    VkCommandBufferBeginInfo beginInfo{};
+    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    /* Optional */ beginInfo.flags            = 0; // Specify usage, won't matter for us right now
+    /* Optional */ beginInfo.pInheritanceInfo = nullptr; // Specify primary buffer to inherit (only for secondary buffers)
+
+    VK_ASSERT(
+        vkBeginCommandBuffer(command, &beginInfo)
+    );
+
+    VkRenderPassBeginInfo passBeginInfo{};
+    passBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+    // Render area
+    passBeginInfo.renderArea.extent = swapchain.extent;
+    passBeginInfo.renderArea.offset = { 0, 0 };
+    //
+    passBeginInfo.renderPass = pipeline.renderPass;
+    passBeginInfo.framebuffer = frameBuffers[imageIndex];
+
+    VkClearValue clearColor {};
+    clearColor.color = {1.0f, 0.8f, 0.6f, 1.0f};
+
+    passBeginInfo.clearValueCount = 1;
+    passBeginInfo.pClearValues = &clearColor;
+
+    // The last parameter has to do with wheter we're gonna use secondary
+    // command buffers or not.
+    // If yes, we should use VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS
+    // If not, we should use VK_SUBPASS_CONTENTS_INLINE
+    vkCmdBeginRenderPass(command, &passBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+    // All drawing commands begin with vkCmd*** and all return void
+    vkCmdBindPipeline(command, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.pipeline);
+
+    /*//* The param names are really self-explanatory
+        commandBuffer: the comand buffer
+    //! vertexCount: number of vertices (baked into shader, for now)
+        instanceCount: number of instances
+        firstVertex: starting vertex (defines lowest value of gl_VertexIndex)
+        firstInstance: starting instance (defines lowest value of gl_InstanceIndex)
+    */
+    vkCmdDraw(command, 3, 1, 0, 0);
+
+    vkCmdEndRenderPass(command);
+
+    VK_ASSERT(
+        vkEndCommandBuffer(command)
+    );
 }
