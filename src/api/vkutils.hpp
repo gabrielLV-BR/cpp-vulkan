@@ -1,12 +1,12 @@
 #pragma once
 
-#include <vector>
-#include <iostream>
+#include <vulkan/vulkan.h>
 #include "GLFW/glfw3.h"
 
-#include <vulkan/vulkan.h>
-
 #include "utils/option.hpp"
+
+#include <vector>
+#include <iostream>
 
 using std::experimental::optional;
 struct QueueFamilyIndices {

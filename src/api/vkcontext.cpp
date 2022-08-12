@@ -1,20 +1,19 @@
+#include <vulkan/vulkan.h>
+
 #include "vkcontext.hpp"
 #include "vkutils.hpp"
 #include "utils/debug.hpp"
 
-#include <stdexcept>
-#include <iterator>
 #include <set>
-
 #include <limits>
-#include <algorithm>
 #include <cstdint>
+#include <iterator>
+#include <algorithm>
+#include <stdexcept>
 
-#include <vulkan/vulkan.h>
 
 VulkanContext::VulkanContext(GLFWwindow *window)
 {
-    std::cout << "NORMAL CONSTRUCTOR\n";
     CreateInstance();
     CreateDebugMessenger();
     CreateSurface(window);
@@ -29,7 +28,6 @@ VulkanContext::VulkanContext(GLFWwindow *window)
 
 VulkanContext::~VulkanContext()
 {
-    std::cout << "VulkanContext terminating\n";
     vkDeviceWaitIdle(device);
     if (useValidationLayers)
     {

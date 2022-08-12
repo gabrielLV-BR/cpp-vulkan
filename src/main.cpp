@@ -12,7 +12,6 @@ public:
         context(window) {}
 
     ~VulkanApp() {
-        std::cout << "VulkanApp terminating" << std::endl;
         glfwDestroyWindow(window);
         glfwTerminate();
     }

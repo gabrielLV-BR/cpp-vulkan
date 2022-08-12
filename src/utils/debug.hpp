@@ -1,10 +1,10 @@
 #pragma once
 
 #include <vulkan/vulkan.h>
-#include <exception>
 
 #include <stdio.h>
 #include <error.h>
+#include <exception>
 
 // I don't see why I would ever want to disable it, 
 // but the functionality is here

@@ -2,9 +2,10 @@
 
 #include <vulkan/vulkan.h>
 #include "GLFW/glfw3.h"
-#include <vector>
 
 #include "components/vkpipeline.hpp"
+
+#include <vector>
 
 const std::vector<const char*> VALIDATION_LAYERS = {
     "VK_LAYER_KHRONOS_validation",

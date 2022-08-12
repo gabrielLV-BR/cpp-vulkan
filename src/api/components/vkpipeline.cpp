@@ -1,5 +1,4 @@
 #include "vkpipeline.hpp"
-
 #include "utils/debug.hpp"
 
 #include <vector>

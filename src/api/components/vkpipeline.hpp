@@ -1,8 +1,9 @@
 #pragma once
 
 #include <vulkan/vulkan.h>
+
 #include "vkshader.hpp"
-#include "../vkutils.hpp"
+#include "api/vkutils.hpp"
 
 class Pipeline {
 private:
