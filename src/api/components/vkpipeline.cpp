@@ -1,4 +1,7 @@
 #include "vkpipeline.hpp"
+
+#include "utils/debug.hpp"
+
 #include <vector>
 
 Pipeline:: Pipeline() {}
@@ -117,9 +120,9 @@ void Pipeline::CreateRenderPass(VkDevice device, VkFormat format) {
   renderPassInfo.subpassCount = subpasses.size();
   renderPassInfo.pSubpasses   = subpasses.data();
 
-  if(vkCreateRenderPass(device, &renderPassInfo, nullptr, &renderPass) != VK_SUCCESS) {
-    throw std:: runtime_error("Failure on creating Render Pass");
-  }
+  VK_ASSERT(
+    vkCreateRenderPass(device, &renderPassInfo, nullptr, &renderPass)
+  );
 }
 
 void Pipeline::CreatePipeline(VkDevice device, VkViewport viewport, VkRect2D scissor) {
@@ -278,9 +281,9 @@ void Pipeline::CreatePipeline(VkDevice device, VkViewport viewport, VkRect2D sci
   layoutInfo.pushConstantRangeCount = 0;
   layoutInfo.pPushConstantRanges    = nullptr;
 
-  if(vkCreatePipelineLayout(device, &layoutInfo, nullptr, &layout) != VK_SUCCESS) {
-    throw std:: runtime_error("Error creating Pipeline Layout");
-  }
+  VK_ASSERT(
+    vkCreatePipelineLayout(device, &layoutInfo, nullptr, &layout)
+  );
 
   auto shaderStages = CreateShaderStages();
 
@@ -317,7 +320,7 @@ void Pipeline::CreatePipeline(VkDevice device, VkViewport viewport, VkRect2D sci
 
   // After all that, we can finally create our dreamed pipeline
 
-  if(
+  VK_ASSERT(
     vkCreateGraphicsPipelines(
       device, 
       VK_NULL_HANDLE, 
@@ -325,9 +328,8 @@ void Pipeline::CreatePipeline(VkDevice device, VkViewport viewport, VkRect2D sci
       &pipelineInfo,
       nullptr,
       &pipeline
-    ) != VK_SUCCESS) {
-    throw std::runtime_error("Failure on creating Graphics Pipeline");
-  }
+    )
+  );
 }
 
 void Pipeline::Destroy(VkDevice device) {

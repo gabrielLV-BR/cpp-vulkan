@@ -1,6 +1,8 @@
 #include "vkutils.hpp"
 #include "vkcontext.hpp"
 
+#include "utils/debug.hpp"
+
 #include <stdexcept>
 #include <cstring>
 #include <iostream>
@@ -56,11 +58,14 @@ bool DeviceSupportsExtensions(VkPhysicalDevice device) {
     std::vector<VkExtensionProperties> 
         availableExtensions(extensionCount);
 
-    if (vkEnumerateDeviceExtensionProperties(
-        device, nullptr, &extensionCount, availableExtensions.data()
-    ) != VK_SUCCESS) {
-        std::cout << "Deu pau em tudo\n";
-    }
+    VK_ASSERT(
+        vkEnumerateDeviceExtensionProperties(
+            device, 
+            nullptr, 
+            &extensionCount, 
+            availableExtensions.data()
+        )
+    );
 
     for(auto& requiredExtension : DEVICE_EXTENSIONS) {
         bool found = false;
