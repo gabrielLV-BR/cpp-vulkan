@@ -1,3 +1,4 @@
 build
 modules
 .vscode
+src/resources/shaders/*.spv
