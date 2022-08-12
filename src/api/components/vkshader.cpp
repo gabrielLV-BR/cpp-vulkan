@@ -6,7 +6,8 @@ ShaderModule::ShaderModule() {}
 ShaderModule::ShaderModule(const char* path, VkDevice device) {
   auto source = FileUtils::ReadBinary(path);
 
-  if(source.size() == 0) throw std::runtime_error("Invalid source");
+  if(source.size() == 0) 
+    throw std::runtime_error("Error creating Shader: Invalid source");
 
   VkShaderModuleCreateInfo shaderInfo{};
 

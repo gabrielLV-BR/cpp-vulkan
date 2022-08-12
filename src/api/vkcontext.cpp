@@ -18,24 +18,9 @@ VulkanContext::VulkanContext(GLFWwindow *window)
     PickPhysicalDevice();
     CreateLogicalDevice();
     CreateSwapchain(window);
-
-    pipeline = Pipeline(device);
-
-    pipeline.CreateRenderPass(device, swapchain.format);
-    pipeline.CreatePipeline(device, 
-        VkViewport {
-            .x = 0.0,
-            .y = 0.0,
-            .width = static_cast<float>(swapchain.extent.width),
-            .height = static_cast<float>(swapchain.extent.height),
-            .minDepth = 0.0f,
-            .maxDepth = 1.0f
-        },
-        VkRect2D {
-            .offset = {0, 0},
-            .extent = swapchain.extent,
-        }
-    );
+    CreatePipeline();
+    CreateFramebuffers();
+    AllocateCommandBuffer();
 }
 
 void VulkanContext::Destroy()
@@ -45,12 +30,15 @@ void VulkanContext::Destroy()
         VkUtils::DestroyDebugMessenger(instance, debugMessenger, nullptr);
     }
 
+    for(auto& frameBuffer : frameBuffers) {
+        vkDestroyFramebuffer(device, frameBuffer, nullptr);
+    }
+
     for(auto& imageView : imageViews) {
         vkDestroyImageView(device, imageView, nullptr);
     }
 
     pipeline.Destroy(device);
-
     swapchain.Destroy(device);
     vkDestroyDevice(device, nullptr);
     vkDestroySurfaceKHR(instance, surface, nullptr);
@@ -164,7 +152,7 @@ void VulkanContext::PickPhysicalDevice()
 
 void VulkanContext::CreateLogicalDevice()
 {
-    auto indices = VkUtils::FindQueueFamilies(physicalDevice, surface);
+    familyIndices = VkUtils::FindQueueFamilies(physicalDevice, surface);
 
     // Since we have multiple queues, we must provide an
     // array of queue infos.
@@ -177,7 +165,7 @@ void VulkanContext::CreateLogicalDevice()
     vector<VkDeviceQueueCreateInfo> queueCreateInfos;
 
     set<uint32_t> uniqueQueueFamilies = {
-        indices.graphics.value(), indices.present.value()
+        familyIndices.graphics.value(), familyIndices.present.value()
     };
     
     float queuePriority = 1.0f;
@@ -234,13 +222,13 @@ void VulkanContext::CreateLogicalDevice()
 
     vkGetDeviceQueue(
         device,
-        indices.graphics.value(),
+        familyIndices.graphics.value(),
         0 /* because we're only using one queue for this family */,
         &graphicsQueue);
 
     vkGetDeviceQueue(
         device,
-        indices.present.value(),
+        familyIndices.present.value(),
         0 /* because we're only using one queue for this family */,
         &presentQueue);
 }
@@ -330,10 +318,10 @@ void VulkanContext::CreateSwapchain(GLFWwindow* window) {
     swapchainInfo.imageArrayLayers = 1;
     swapchainInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
-    auto queueIndices = VkUtils::FindQueueFamilies(physicalDevice, surface);
+    // auto queueIndices = VkUtils::FindQueueFamilies(physicalDevice, surface);
 
     uint32_t queueFamilyIndices[] = {
-        queueIndices.graphics.value(), queueIndices.present.value()
+        familyIndices.graphics.value(), familyIndices.present.value()
     };
 
     if(queueFamilyIndices[0] == queueFamilyIndices[1]) {
@@ -418,4 +406,88 @@ void VulkanContext::CreateImageView() {
         }
     }
 
+}
+
+void VulkanContext::CreatePipeline() {
+    pipeline = Pipeline(device);
+
+    pipeline.CreateRenderPass(device, swapchain.format);
+    pipeline.CreatePipeline(device, 
+        VkViewport {
+            .x = 0.0,
+            .y = 0.0,
+            .width = static_cast<float>(swapchain.extent.width),
+            .height = static_cast<float>(swapchain.extent.height),
+            .minDepth = 0.0f,
+            .maxDepth = 1.0f
+        },
+        VkRect2D {
+            .offset = {0, 0},
+            .extent = swapchain.extent,
+        }
+    );
+}
+
+void VulkanContext::CreateFramebuffers() {
+    // We must create a Framebuffer for each
+    // imageView attachment
+    frameBuffers.resize(imageViews.size());
+
+    for(int i = 0; i < imageViews.size(); i++) {
+        VkImageView attachments[] = {
+            imageViews[i]
+        };
+
+        VkFramebufferCreateInfo frameBufferInfo{};
+        frameBufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+
+        frameBufferInfo.attachmentCount = 1;
+        frameBufferInfo.pAttachments = attachments;
+        frameBufferInfo.layers = 1;
+
+        frameBufferInfo.width = swapchain.extent.width;
+        frameBufferInfo.height = swapchain.extent.height;
+
+        frameBufferInfo.renderPass = pipeline.renderPass;
+
+        if(
+            vkCreateFramebuffer(
+                device, 
+                &frameBufferInfo, 
+                nullptr,
+                &frameBuffers[i]
+            ) != VK_SUCCESS) {
+            throw std::runtime_error("Failure on creating Framebuffer");
+        }
+    }
+}
+
+void VulkanContext::CreateCommandPool() {
+    VkCommandPoolCreateInfo commandPoolInfo{};
+    commandPoolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+    // These flags allow us to specify how we're going to use the
+    // command buffers
+    // Since we're going to be re-recording them each frame, we specify
+    // the CREATE_RESET bit, as to make Vulkan optimize for frequent records 
+    commandPoolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+    commandPoolInfo.queueFamilyIndex = familyIndices.graphics.value();
+
+    vkCreateCommandPool(device, nullptr, nullptr, &commandPool);
+}
+
+void VulkanContext::AllocateCommandBuffer() {
+    VkCommandBufferAllocateInfo commandBufferInfo{};
+    commandBufferInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    // A Command Buffer's level can be:
+    // - PRIMARY: It's passed directly to the command queue
+    // - SECONDARY: Can only be called from primary command 
+    commandBufferInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    commandBufferInfo.commandPool = commandPool;
+
+    // Here we specify the ammount of commad buffers...
+    commandBufferInfo.commandBufferCount = 1;
+    //                         ...we're allocatting here in &commandBuffer
+    if(vkAllocateCommandBuffers(device, &commandBufferInfo, &commandBuffer) != VK_SUCCESS) {
+        throw std::runtime_error("Error on allocating CommandBuffers");
+    }
 }

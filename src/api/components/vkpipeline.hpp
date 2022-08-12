@@ -9,12 +9,12 @@ private:
   ShaderModule vertexShaderModule;
   ShaderModule fragmentShaderModule;
   
-  VkPipeline pipeline;
-  VkRenderPass renderPass;
-
-  VkPipelineLayout layout;
 
 public:
+  VkPipeline pipeline;
+  VkRenderPass renderPass;
+  VkPipelineLayout layout;
+  
   Pipeline();
   Pipeline(VkDevice);
   void Destroy(VkDevice);

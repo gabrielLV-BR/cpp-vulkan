@@ -43,7 +43,12 @@ private:
 
     VkSurfaceKHR surface;
     Swapchain swapchain;
+
+    VkCommandPool commandPool;
+    VkCommandBuffer commandBuffer;
+
     std::vector<VkImageView> imageViews;
+    std::vector<VkFramebuffer> frameBuffers;
 
     // Queues
     VkQueue graphicsQueue;
@@ -52,6 +57,8 @@ private:
     // Debug
     VkDebugUtilsMessengerEXT debugMessenger;
     std::vector<const char*> activeLayers;
+
+    QueueFamilyIndices familyIndices;
 
 public:
     VulkanContext();
@@ -66,6 +73,10 @@ private:
     void CreateSurface(GLFWwindow*);
     void CreateSwapchain(GLFWwindow*);
     void CreateImageView();
+    void CreatePipeline();
+    void CreateFramebuffers();
+    void CreateCommandPool();
+    void AllocateCommandBuffer();
     // Debug
     void CreateDebugMessenger();
     void PopulateDebugMessenger(VkDebugUtilsMessengerCreateInfoEXT&);
