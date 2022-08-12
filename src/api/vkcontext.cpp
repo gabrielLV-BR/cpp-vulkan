@@ -10,22 +10,27 @@
 #include <algorithm>
 #include <cstdint>
 
-VulkanContext::VulkanContext() {}
+#include <vulkan/vulkan.h>
 
 VulkanContext::VulkanContext(GLFWwindow *window)
 {
+    std::cout << "NORMAL CONSTRUCTOR\n";
     CreateInstance();
+    CreateDebugMessenger();
     CreateSurface(window);
     PickPhysicalDevice();
     CreateLogicalDevice();
     CreateSwapchain(window);
     CreatePipeline();
     CreateFramebuffers();
+    CreateCommandPool();
     AllocateCommandBuffer();
 }
 
-void VulkanContext::Destroy()
+VulkanContext::~VulkanContext()
 {
+    std::cout << "VulkanContext terminating\n";
+    vkDeviceWaitIdle(device);
     if (useValidationLayers)
     {
         VkUtils::DestroyDebugMessenger(instance, debugMessenger, nullptr);
@@ -39,8 +44,12 @@ void VulkanContext::Destroy()
         vkDestroyImageView(device, imageView, nullptr);
     }
 
+    vkFreeCommandBuffers(device, commandPool, 1, &commandBuffer);
+    vkDestroyCommandPool(device, commandPool, nullptr);
+
     pipeline.Destroy(device);
     swapchain.Destroy(device);
+    
     vkDestroyDevice(device, nullptr);
     vkDestroySurfaceKHR(instance, surface, nullptr);
     vkDestroyInstance(instance, nullptr);
@@ -96,7 +105,7 @@ void VulkanContext::CreateSurface(GLFWwindow *window)
 
 void VulkanContext::CreateDebugMessenger()
 {
-    VkDebugUtilsMessengerCreateInfoEXT info;
+    VkDebugUtilsMessengerCreateInfoEXT info{};
     PopulateDebugMessenger(info);
 
     VK_ASSERT(
@@ -117,6 +126,7 @@ void VulkanContext::PopulateDebugMessenger(VkDebugUtilsMessengerCreateInfoEXT &d
         VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT |
         VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT;
     debugMessenger.pUserData = nullptr;
+    debugMessenger.pNext = nullptr;
 }
 
 void VulkanContext::PickPhysicalDevice()
@@ -471,7 +481,7 @@ void VulkanContext::CreateCommandPool() {
     commandPoolInfo.queueFamilyIndex = familyIndices.graphics.value();
 
     VK_ASSERT(
-        vkCreateCommandPool(device, nullptr, nullptr, &commandPool)
+        vkCreateCommandPool(device, &commandPoolInfo, nullptr, &commandPool)
     );
 }
 

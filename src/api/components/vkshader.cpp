@@ -5,12 +5,9 @@
 ShaderModule::ShaderModule() {}
 
 ShaderModule::ShaderModule(const char* path, VkDevice device) {
-  // auto source = FileUtils::ReadBinary(path);
-  std::vector<char> source = {};
+  auto source = FileUtils::ReadBinary(path);
 
-  ASSERT(source.size() > 0, "Invalid shader source");
-  // if(source.size() == 0) 
-  //   throw std::runtime_error("Error creating Shader: Invalid source");
+  ASSERT(source.size() != 0, "Invalid shader source");
 
   VkShaderModuleCreateInfo shaderInfo{};
 
@@ -25,15 +22,15 @@ ShaderModule::ShaderModule(const char* path, VkDevice device) {
       device, 
       &shaderInfo, 
       nullptr, 
-      &module
+      &handle
     )
   );
 }
 
 void ShaderModule::Destroy(VkDevice device) {
-  vkDestroyShaderModule(device, module, nullptr);
+  vkDestroyShaderModule(device, handle, nullptr);
 }
 
 VkShaderModule& ShaderModule::GetModule() {
-  return module;
+  return handle;
 }

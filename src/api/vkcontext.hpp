@@ -61,9 +61,9 @@ private:
     QueueFamilyIndices familyIndices;
 
 public:
-    VulkanContext();
+    VulkanContext() = delete;
     VulkanContext(GLFWwindow* window);
-    void Destroy();
+    ~VulkanContext();
 
 private:
     void CreateInstance();

@@ -7,16 +7,12 @@ private:
     GLFWwindow* window;
     VulkanContext context;
 public:
-    VulkanApp(const char* title, int width, int height) {
-        glfwInit();
-        glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-        glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
-
-        window = glfwCreateWindow(width, height, title, nullptr, nullptr);
-        context = VulkanContext(window);
-    }
+    VulkanApp(const char* title, int width, int height):
+        window(glfwCreateWindow(width, height, title, nullptr, nullptr)),
+        context(window) {}
 
     ~VulkanApp() {
+        std::cout << "VulkanApp terminating" << std::endl;
         glfwDestroyWindow(window);
         glfwTerminate();
     }
@@ -29,6 +25,11 @@ public:
 };
 
 int main() {
+    glfwInit();
+    glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+    glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+
     VulkanApp app("Oi", 500, 500);
+
     app.Run();
 }

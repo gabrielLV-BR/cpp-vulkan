@@ -4,7 +4,7 @@
 
 class ShaderModule {
 private:
-  VkShaderModule module;
+  VkShaderModule handle;
 public:
   ShaderModule();
   ShaderModule(const char*, VkDevice);
