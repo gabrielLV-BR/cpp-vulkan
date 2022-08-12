@@ -6,9 +6,9 @@ class ShaderModule {
 private:
   VkShaderModule module;
 public:
-  ShaderModule() {}
-  ShaderModule(const char*, VkDevice) {}
-  void Destroy(VkDevice) {}
+  ShaderModule();
+  ShaderModule(const char*, VkDevice);
+  void Destroy(VkDevice);
 
   VkShaderModule& GetModule();
 };

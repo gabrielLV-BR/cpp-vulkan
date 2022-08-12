@@ -18,6 +18,24 @@ VulkanContext::VulkanContext(GLFWwindow *window)
     PickPhysicalDevice();
     CreateLogicalDevice();
     CreateSwapchain(window);
+
+    pipeline = Pipeline(device);
+
+    pipeline.CreateRenderPass(device, swapchain.format);
+    pipeline.CreatePipeline(device, 
+        VkViewport {
+            .x = 0.0,
+            .y = 0.0,
+            .width = static_cast<float>(swapchain.extent.width),
+            .height = static_cast<float>(swapchain.extent.height),
+            .minDepth = 0.0f,
+            .maxDepth = 1.0f
+        },
+        VkRect2D {
+            .offset = {0, 0},
+            .extent = swapchain.extent,
+        }
+    );
 }
 
 void VulkanContext::Destroy()
@@ -30,6 +48,8 @@ void VulkanContext::Destroy()
     for(auto& imageView : imageViews) {
         vkDestroyImageView(device, imageView, nullptr);
     }
+
+    pipeline.Destroy(device);
 
     swapchain.Destroy(device);
     vkDestroyDevice(device, nullptr);

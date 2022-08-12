@@ -4,6 +4,8 @@
 #include "GLFW/glfw3.h"
 #include <vector>
 
+#include "components/vkpipeline.hpp"
+
 const std::vector<const char*> VALIDATION_LAYERS = {
     "VK_LAYER_KHRONOS_validation",
     "VK_LAYER_LUNARG_standard_validation"
@@ -36,6 +38,8 @@ private:
 
     VkDevice device;
     VkPhysicalDevice physicalDevice;
+
+    Pipeline pipeline;
 
     VkSurfaceKHR surface;
     Swapchain swapchain;

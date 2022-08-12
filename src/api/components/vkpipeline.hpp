@@ -8,7 +8,10 @@ class Pipeline {
 private:
   ShaderModule vertexShaderModule;
   ShaderModule fragmentShaderModule;
+  
   VkPipeline pipeline;
+  VkRenderPass renderPass;
+
   VkPipelineLayout layout;
 
 public:
@@ -17,6 +20,7 @@ public:
   void Destroy(VkDevice);
 
   void CreatePipeline(VkDevice, VkViewport, VkRect2D);
+  void CreateRenderPass(VkDevice, VkFormat);
 
 private:
   std::vector<VkPipelineShaderStageCreateInfo> CreateShaderStages();  
