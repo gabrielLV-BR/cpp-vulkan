@@ -1,6 +1,7 @@
+#include <vulkan/vulkan.h>
+
 #include "vkutils.hpp"
 #include "vkcontext.hpp"
-
 #include "utils/debug.hpp"
 
 #include <stdexcept>
@@ -260,5 +261,5 @@ VkResult VkUtils::DestroyDebugMessenger(VkInstance instance, VkDebugUtilsMesseng
         func(instance, debugMessenger, pAllocator);
         return VK_SUCCESS;
     }
-    return VK_ERROR_UNKNOWN;
+    return VK_ERROR_EXTENSION_NOT_PRESENT;
 }

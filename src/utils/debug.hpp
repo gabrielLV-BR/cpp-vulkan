@@ -11,7 +11,7 @@
 #ifndef NO_ASSERT
 
   // Generic form
-  #define ASSERT(x,y) if(!x) { \
+  #define ASSERT(x,y) if(!(x)) { \
     fprintf(stderr, "\n\033[0;31m[ASSERT FAILED]\33[0m { %s } %s\n\t- at %s:%d\n\n", #x, y, __FILE__, __LINE__); \
     throw std::runtime_error("Check error log"); \
   }

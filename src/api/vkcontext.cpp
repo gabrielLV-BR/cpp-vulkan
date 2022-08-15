@@ -3,14 +3,11 @@
 #include "vkcontext.hpp"
 #include "vkutils.hpp"
 #include "utils/debug.hpp"
+#include "utils/math.hpp"
 
 #include <set>
 #include <limits>
-#include <cstdint>
-#include <iterator>
-#include <algorithm>
 #include <stdexcept>
-
 
 VulkanContext::VulkanContext(GLFWwindow *window)
 {
@@ -166,7 +163,8 @@ void VulkanContext::CreateLogicalDevice()
     // to make this more compact AND remove duplicate indices
     // (which is likely to happen with `graphics` and `present`)
 
-    using std::vector, std::set;
+    using std::vector;
+    using std::set;
 
     vector<VkDeviceQueueCreateInfo> queueCreateInfos;
 
@@ -296,12 +294,12 @@ void VulkanContext::CreateSwapchain(GLFWwindow* window) {
             glfwGetFramebufferSize(window, &width, &height);
 
             extent = {
-                std::clamp(
+                MathUtils::clamp(
                     static_cast<uint32_t>(width),
                     cap.minImageExtent.width,
                     cap.maxImageExtent.width
                 ),
-                std::clamp(
+                MathUtils::clamp(
                     static_cast<uint32_t>(height),
                     cap.minImageExtent.height,
                     cap.maxImageExtent.height
@@ -315,7 +313,7 @@ void VulkanContext::CreateSwapchain(GLFWwindow* window) {
     swapchainInfo.imageFormat = surfaceFormat.format;
     swapchainInfo.imageColorSpace = surfaceFormat.colorSpace;
 
-    auto imageCount = std::clamp(
+    auto imageCount = MathUtils::clamp(
         swapchainDetails.capabilites.minImageCount + 1,
         swapchainDetails.capabilites.minImageCount,
         swapchainDetails.capabilites.maxImageCount
@@ -546,7 +544,7 @@ void VulkanContext::RecordCommand(VkCommandBuffer& command, uint32_t imageIndex)
     vkCmdSetViewport(command, 0, 1, viewports);
     vkCmdSetScissor(command, 0, 1, scissors);
 
-    /*//* The param names are really self-explanatory
+    /* The param names are really self-explanatory
         commandBuffer: the comand buffer
     //! vertexCount: number of vertices (baked into shader, for now)
         instanceCount: number of instances
