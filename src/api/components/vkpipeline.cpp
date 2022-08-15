@@ -119,6 +119,54 @@ void Pipeline::CreateRenderPass(VkDevice device, VkFormat format) {
   renderPassInfo.subpassCount = subpasses.size();
   renderPassInfo.pSubpasses   = subpasses.data();
 
+  // I was going to try to explain subpass dependencies, but this
+  // reddit post did it flawlessly so I'll just link it here
+  // https://www.reddit.com/r/vulkan/comments/s80reu/comment/hth2uj9/?utm_source=share&utm_medium=web2x&context=3
+  // Keep in mind 
+
+  VkSubpassDependency subpassDep{};
+  // This is the dependency that transforms
+  // our input attachment into one usable by our
+  // subpass, so this comes before anyone else
+  // That's why we depend on VK_SUBPASS_EXTERNAL,
+  // which right now means the previous render pass
+  subpassDep.srcSubpass = VK_SUBPASS_EXTERNAL;
+  // Zero because it's the first one
+  subpassDep.dstSubpass = 0;
+
+  // We are depending of the output of the color
+  // attachment of the previous subpass, because
+  // we need it to draw
+  subpassDep.srcStageMask = 
+    VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+  
+  // We signal which outputs of this subpass are
+  // actually dependant on the srcStageMask
+  // (if we're just waiting for color, the vertex
+  // shader could run in parallel just fine)
+  subpassDep.dstStageMask =
+    VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+
+  // The AccessMask property is set so to tell
+  // Vulkan which memory operations are going to
+  // be executed, as to help it optimize (and allow)
+  // for such operations without sync problems
+
+  // The srcAccessMask is 0 because the pre-subpass
+  // we're talking about doesn't read from any buffer,
+  // it just fills the image with a color.
+  subpassDep.srcAccessMask = 0;
+  // The dstAccessMask, however, WILL write color into
+  // the output color attachment, so we specify that
+  subpassDep.dstAccessMask = 
+    VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+
+  // After we've defined our subpasses dependencies,
+  // we simply include them in our renderPassInfo
+
+  renderPassInfo.dependencyCount = 1;
+  renderPassInfo.pDependencies = &subpassDep;
+
   VK_ASSERT(
     vkCreateRenderPass(device, &renderPassInfo, nullptr, &renderPass)
   );

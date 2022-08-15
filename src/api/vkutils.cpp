@@ -218,6 +218,11 @@ SwapchainSupport VkUtils::FindSwapchainSupport(
     return support;
 }
 
+void VkUtils::RecordCmdBuffer(VkCommandBuffer&, uint32_t imageIndex) {
+    
+}
+
+
 // DEBUG
 
 VKAPI_ATTR VkBool32 VKAPI_CALL VkUtils::DebugCallback(

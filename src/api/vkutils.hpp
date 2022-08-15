@@ -37,6 +37,8 @@ namespace VkUtils {
 
     void ListLayers();
 
+    void RecordCmdBuffer(VkCommandBuffer&, uint32_t imageIndex);
+
     // Debug message callback
     VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(
         VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,

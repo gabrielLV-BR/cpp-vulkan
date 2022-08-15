@@ -34,26 +34,26 @@ struct Swapchain {
 };
 
 class VulkanContext {
-private:
-    VkInstance instance;
-
+public:
     VkDevice device;
-    VkPhysicalDevice physicalDevice;
-
-    Pipeline pipeline;
-
-    VkSurfaceKHR surface;
     Swapchain swapchain;
+    Pipeline pipeline;
 
     VkCommandPool commandPool;
     VkCommandBuffer commandBuffer;
 
-    std::vector<VkImageView> imageViews;
-    std::vector<VkFramebuffer> frameBuffers;
-
     // Queues
     VkQueue graphicsQueue;
     VkQueue presentQueue;
+private:
+    VkInstance instance;
+
+    VkPhysicalDevice physicalDevice;
+
+    VkSurfaceKHR surface;
+
+    std::vector<VkImageView> imageViews;
+    std::vector<VkFramebuffer> frameBuffers;
 
     // Debug
     VkDebugUtilsMessengerEXT debugMessenger;
@@ -65,6 +65,9 @@ public:
     VulkanContext() = delete;
     VulkanContext(GLFWwindow* window);
     ~VulkanContext();
+
+    // For now, we'll leave this here
+    void RecordCommand(VkCommandBuffer&, uint32_t);
 
 private:
     void CreateInstance();
@@ -78,8 +81,6 @@ private:
     void CreateFramebuffers();
     void CreateCommandPool();
     void AllocateCommandBuffer();
-    // For now, we'll leave this here
-    void RecordCommand(VkCommandBuffer&, uint32_t);
     // Debug
     void CreateDebugMessenger();
     void PopulateDebugMessenger(VkDebugUtilsMessengerCreateInfoEXT&);
