@@ -69,6 +69,9 @@ public:
     // For now, we'll leave this here
     void RecordCommand(VkCommandBuffer&, uint32_t);
 
+    VkViewport GetViewport();
+    VkRect2D GetScissor();
+
 private:
     void CreateInstance();
     void PickPhysicalDevice();

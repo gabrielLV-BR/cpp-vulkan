@@ -32,6 +32,7 @@ public:
             glfwPollEvents();
             Render();
         }
+        vkDeviceWaitIdle(context.device);
     }
 
     void Render() {
@@ -148,4 +149,6 @@ int main() {
     VulkanApp app("Oi", 500, 500);
 
     app.Run();
+
+    return 0;
 }

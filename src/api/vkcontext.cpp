@@ -20,6 +20,7 @@ VulkanContext::VulkanContext(GLFWwindow *window)
     PickPhysicalDevice();
     CreateLogicalDevice();
     CreateSwapchain(window);
+    CreateImageView();
     CreatePipeline();
     CreateFramebuffers();
     CreateCommandPool();
@@ -28,7 +29,6 @@ VulkanContext::VulkanContext(GLFWwindow *window)
 
 VulkanContext::~VulkanContext()
 {
-    vkDeviceWaitIdle(device);
     if (useValidationLayers)
     {
         VkUtils::DestroyDebugMessenger(instance, debugMessenger, nullptr);
@@ -419,20 +419,7 @@ void VulkanContext::CreatePipeline() {
     pipeline = Pipeline(device);
 
     pipeline.CreateRenderPass(device, swapchain.format);
-    pipeline.CreatePipeline(device, 
-        VkViewport {
-            .x = 0.0,
-            .y = 0.0,
-            .width = static_cast<float>(swapchain.extent.width),
-            .height = static_cast<float>(swapchain.extent.height),
-            .minDepth = 0.0f,
-            .maxDepth = 1.0f
-        },
-        VkRect2D {
-            .offset = {0, 0},
-            .extent = swapchain.extent,
-        }
-    );
+    pipeline.CreatePipeline(device, GetViewport(), GetScissor());
 }
 
 void VulkanContext::CreateFramebuffers() {
@@ -500,6 +487,24 @@ void VulkanContext::AllocateCommandBuffer() {
     );
 }
 
+VkViewport VulkanContext::GetViewport() {
+    return VkViewport {
+        .x = 0.0f,
+        .y = 0.0f,
+        .width = static_cast<float>(swapchain.extent.width),
+        .height = static_cast<float>(swapchain.extent.height),
+        .minDepth= 0.0f,
+        .maxDepth = 1.0f
+    };
+}
+
+VkRect2D VulkanContext::GetScissor() {
+    return VkRect2D {
+        .offset = { 0, 0 },
+        .extent = swapchain.extent
+    };
+}
+
 void VulkanContext::RecordCommand(VkCommandBuffer& command, uint32_t imageIndex) {
 
     VkCommandBufferBeginInfo beginInfo{};
@@ -534,6 +539,12 @@ void VulkanContext::RecordCommand(VkCommandBuffer& command, uint32_t imageIndex)
 
     // All drawing commands begin with vkCmd*** and all return void
     vkCmdBindPipeline(command, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.pipeline);
+
+    VkViewport viewports[] = { GetViewport() };
+    VkRect2D scissors[] = { GetScissor() };
+
+    vkCmdSetViewport(command, 0, 1, viewports);
+    vkCmdSetScissor(command, 0, 1, scissors);
 
     /*//* The param names are really self-explanatory
         commandBuffer: the comand buffer
