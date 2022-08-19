@@ -12,20 +12,17 @@ Pipeline:: Pipeline(VkDevice device)
 }
 
 std::vector<VkPipelineShaderStageCreateInfo> Pipeline::CreateShaderStages() {
-  auto vertexModule = vertexShaderModule.GetModule();
-  auto fragmentModule = fragmentShaderModule.GetModule();
-
   VkPipelineShaderStageCreateInfo vertexInfo{};
   vertexInfo.sType  = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
   vertexInfo.stage  = VK_SHADER_STAGE_VERTEX_BIT;
   vertexInfo.pName  = "main";
-  vertexInfo.module = vertexModule;
+  vertexInfo.module = vertexShaderModule.GetModule();
 
   VkPipelineShaderStageCreateInfo fragInfo{};
   fragInfo.sType  = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
   fragInfo.stage  = VK_SHADER_STAGE_FRAGMENT_BIT;
   fragInfo.pName  = "main";
-  fragInfo.module = fragmentModule;
+  fragInfo.module = fragmentShaderModule.GetModule();
 
   return { vertexInfo, fragInfo };
 }
@@ -108,17 +105,6 @@ void Pipeline::CreateRenderPass(VkDevice device, VkFormat format) {
     subpassDescription
   };
 
-  // FINALLY, we create our RenderPass.
-  // We're ever so slightly closer to our triangle
-  VkRenderPassCreateInfo renderPassInfo{};
-  renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-
-  renderPassInfo.attachmentCount = attachmentDescriptions.size();
-  renderPassInfo.pAttachments    = attachmentDescriptions.data();
-
-  renderPassInfo.subpassCount = subpasses.size();
-  renderPassInfo.pSubpasses   = subpasses.data();
-
   // I was going to try to explain subpass dependencies, but this
   // reddit post did it flawlessly so I'll just link it here
   // https://www.reddit.com/r/vulkan/comments/s80reu/comment/hth2uj9/?utm_source=share&utm_medium=web2x&context=3
@@ -163,6 +149,17 @@ void Pipeline::CreateRenderPass(VkDevice device, VkFormat format) {
 
   // After we've defined our subpasses dependencies,
   // we simply include them in our renderPassInfo
+
+  //* FINALLY, we create our RenderPass.
+  //* We're ever so slightly closer to our triangle
+  VkRenderPassCreateInfo renderPassInfo{};
+  renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+
+  renderPassInfo.attachmentCount = attachmentDescriptions.size();
+  renderPassInfo.pAttachments    = attachmentDescriptions.data();
+
+  renderPassInfo.subpassCount = subpasses.size();
+  renderPassInfo.pSubpasses   = subpasses.data();
 
   renderPassInfo.dependencyCount = 1;
   renderPassInfo.pDependencies = &subpassDep;
@@ -214,8 +211,6 @@ void Pipeline::CreatePipeline(VkDevice device, VkViewport viewport, VkRect2D sci
   // Attribute descriptions: type of the attributes passed to the vertex shader, which binding to load them from and at which offset
   vertexInputInfo.vertexAttributeDescriptionCount = 0;
   vertexInputInfo.vertexBindingDescriptionCount   = 0;
-  vertexInputInfo.pVertexAttributeDescriptions    = nullptr;
-  vertexInputInfo.pVertexBindingDescriptions      = nullptr;
 
   VkPipelineInputAssemblyStateCreateInfo inputAssemblyInfo{};
   inputAssemblyInfo.sType                  = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
@@ -224,24 +219,18 @@ void Pipeline::CreatePipeline(VkDevice device, VkViewport viewport, VkRect2D sci
 
   VkPipelineViewportStateCreateInfo viewportInfo{};
   viewportInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
-  // Since we're using VIEWPORT and SCISSOR as dynamic states,
-  // we only pass in the count
+  /* 
+  We'd need to set them up on creation like this if we weren't using
+  them as DynamicStates.
+  We will need to set them before drawing, however.
+
+  ? viewportState.pViewports    = &viewport;
+  ? viewportState.pScissors     = &scissor;
+
+  Since they're dynamic, we just pass the count,
+  */
   viewportInfo.viewportCount = 1;
   viewportInfo.scissorCount  = 1;
-
-
-  /* 
-  * We'd need to set them up on creation like this if we weren't using
-  * them as DynamicStates.
-  * We will need to set them before drawing, however.
-
-  ? VkPipelineViewportStateCreateInfo viewportState{};
-  viewportState.sType         = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
-  viewportState.viewportCount = 1;
-  viewportState.pViewports    = &viewport;
-  viewportState.scissorCount  = 1;
-  viewportState.pScissors     = &scissor;
-  */
 
   VkPipelineRasterizationStateCreateInfo rasterizerInfo{};
   rasterizerInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
@@ -296,17 +285,11 @@ void Pipeline::CreatePipeline(VkDevice device, VkViewport viewport, VkRect2D sci
     Have at it -> https: //registry.khronos.org/vulkan/specs/1.2/html/chap8.html#_framebuffers
   */
  
-  // I still don't understand every option of both Attachment
-  // and Create Info of Color Blending, but this should
-  // give us regular alpha blending.
   VkPipelineColorBlendAttachmentState blendingAttachment{};
-  blendingAttachment.blendEnable         = VK_TRUE;
-  blendingAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
-  blendingAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
-  blendingAttachment.colorBlendOp        = VK_BLEND_OP_ADD;
-  blendingAttachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
-  blendingAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
-  blendingAttachment.alphaBlendOp        = VK_BLEND_OP_ADD;
+  blendingAttachment.colorWriteMask = 
+    VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | 
+    VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+  blendingAttachment.blendEnable = VK_FALSE;
 
   VkPipelineColorBlendStateCreateInfo blendingInfo{};
   blendingInfo.sType             = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
@@ -324,9 +307,7 @@ void Pipeline::CreatePipeline(VkDevice device, VkViewport viewport, VkRect2D sci
   VkPipelineLayoutCreateInfo layoutInfo{};
   layoutInfo.sType                  = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
   layoutInfo.setLayoutCount         = 0;
-  layoutInfo.pSetLayouts            = nullptr;
   layoutInfo.pushConstantRangeCount = 0;
-  layoutInfo.pPushConstantRanges    = nullptr;
 
   VK_ASSERT(
     vkCreatePipelineLayout(device, &layoutInfo, nullptr, &layout)
@@ -346,15 +327,14 @@ void Pipeline::CreatePipeline(VkDevice device, VkViewport viewport, VkRect2D sci
   pipelineInfo.pMultisampleState   = &multisampleInfo;
   pipelineInfo.pColorBlendState    = &blendingInfo;
 
-  pipelineInfo.pDepthStencilState = nullptr;
-  pipelineInfo.pTessellationState = nullptr;
+  // pipelineInfo.pDepthStencilState = nullptr;
+  // pipelineInfo.pTessellationState = nullptr;
 
   // Shaders
   pipelineInfo.stageCount = shaderStages.size();
   pipelineInfo.pStages    = shaderStages.data();
 
   pipelineInfo.layout = layout;
-
   pipelineInfo.renderPass = renderPass;
   pipelineInfo.subpass    = 0;
 
@@ -363,7 +343,6 @@ void Pipeline::CreatePipeline(VkDevice device, VkViewport viewport, VkRect2D sci
 // pipeline handle, which will serve as a base (duh) for the
 // new one
   pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
-  pipelineInfo.basePipelineIndex  = -1;
 
   // After all that, we can finally create our dreamed pipeline
 

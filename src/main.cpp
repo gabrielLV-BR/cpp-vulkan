@@ -75,9 +75,8 @@ public:
         submitInfo.pWaitDstStageMask = waitStages;
 
         // We submit an array of our command buffers
-        VkCommandBuffer commandBuffers[] = { context.commandBuffer };
         submitInfo.commandBufferCount = 1;
-        submitInfo.pCommandBuffers = commandBuffers;
+        submitInfo.pCommandBuffers = &context.commandBuffer;
 
         // We also pass in semaphores to be signaled when the
         // render finishes
@@ -113,14 +112,13 @@ public:
         // would pass and array of VkResults to
         // verify the output of each one
         // Not necessary when using just one swapchain
-        presentInfo.pResults = nullptr;
+        // presentInfo.pResults = nullptr;
 
         // After that, we're finally ready to show
         // the world what we've done
         VK_ASSERT(
             vkQueuePresentKHR(context.graphicsQueue, &presentInfo)
         );
-        
     }
 private:
 

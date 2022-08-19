@@ -59,7 +59,7 @@ void VulkanContext::CreateInstance()
     appInfo.pEngineName = "My Engine";
     appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
 
-    appInfo.apiVersion = VK_API_VERSION_1_1;
+    appInfo.apiVersion = VK_API_VERSION_1_0;
     appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
 
     VkInstanceCreateInfo instanceInfo{};
@@ -381,13 +381,11 @@ void VulkanContext::CreateImageView() {
     imageViews.resize(swapchain.images.size());
 
     for(int i = 0; i < imageViews.size(); i++) {
-        auto& image = swapchain.images[i];
-
         VkImageViewCreateInfo imageInfo{};
 
         imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
         imageInfo.format = swapchain.format;
-        imageInfo.image = image;
+        imageInfo.image = swapchain.images[i];
         imageInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
 
         imageInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
@@ -415,7 +413,6 @@ void VulkanContext::CreateImageView() {
 
 void VulkanContext::CreatePipeline() {
     pipeline = Pipeline(device);
-
     pipeline.CreateRenderPass(device, swapchain.format);
     pipeline.CreatePipeline(device, GetViewport(), GetScissor());
 }
@@ -477,7 +474,7 @@ void VulkanContext::AllocateCommandBuffer() {
     commandBufferInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
     commandBufferInfo.commandPool = commandPool;
 
-    // Here we specify the ammount of commad buffers...
+    // Here we specify the ammount of command buffers...
     commandBufferInfo.commandBufferCount = 1;
     //                         ...we're allocatting here in &commandBuffer
     VK_ASSERT(
@@ -491,7 +488,7 @@ VkViewport VulkanContext::GetViewport() {
         .y = 0.0f,
         .width = static_cast<float>(swapchain.extent.width),
         .height = static_cast<float>(swapchain.extent.height),
-        .minDepth= 0.0f,
+        .minDepth = 0.0f,
         .maxDepth = 1.0f
     };
 }
@@ -507,8 +504,8 @@ void VulkanContext::RecordCommand(VkCommandBuffer& command, uint32_t imageIndex)
 
     VkCommandBufferBeginInfo beginInfo{};
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-    /* Optional */ beginInfo.flags            = 0; // Specify usage, won't matter for us right now
-    /* Optional */ beginInfo.pInheritanceInfo = nullptr; // Specify primary buffer to inherit (only for secondary buffers)
+    // /* Optional */ beginInfo.flags            = 0; // Specify usage, won't matter for us right now
+    // /* Optional */ beginInfo.pInheritanceInfo = nullptr; // Specify primary buffer to inherit (only for secondary buffers)
 
     VK_ASSERT(
         vkBeginCommandBuffer(command, &beginInfo)
@@ -523,8 +520,7 @@ void VulkanContext::RecordCommand(VkCommandBuffer& command, uint32_t imageIndex)
     passBeginInfo.renderPass = pipeline.renderPass;
     passBeginInfo.framebuffer = frameBuffers[imageIndex];
 
-    VkClearValue clearColor {};
-    clearColor.color = {1.0f, 0.8f, 0.6f, 1.0f};
+    VkClearValue clearColor {{{0.2f, 0.2f, 0.2f, 1.0f}}};
 
     passBeginInfo.clearValueCount = 1;
     passBeginInfo.pClearValues = &clearColor;
@@ -538,11 +534,22 @@ void VulkanContext::RecordCommand(VkCommandBuffer& command, uint32_t imageIndex)
     // All drawing commands begin with vkCmd*** and all return void
     vkCmdBindPipeline(command, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.pipeline);
 
-    VkViewport viewports[] = { GetViewport() };
-    VkRect2D scissors[] = { GetScissor() };
+    // VkViewport viewports[] = { GetViewport() };
+    // VkRect2D scissors[] = { GetScissor() };
 
-    vkCmdSetViewport(command, 0, 1, viewports);
-    vkCmdSetScissor(command, 0, 1, scissors);
+    VkViewport viewport{};
+    viewport.x = 0.0f;
+    viewport.y = 0.0f;
+    viewport.width = static_cast<float>(swapchain.extent.width);
+    viewport.height = static_cast<float>(swapchain.extent.height);
+    viewport.minDepth = 0.0f;
+    viewport.maxDepth = 1.0f;
+    vkCmdSetViewport(command, 0, 1, &viewport);
+
+    VkRect2D scissor{};
+    scissor.offset = { 0, 0 };
+    scissor.extent = swapchain.extent;
+    vkCmdSetScissor(command, 0, 1, &scissor);
 
     /* The param names are really self-explanatory
         commandBuffer: the comand buffer
