@@ -553,7 +553,7 @@ void VulkanContext::RecordCommand(VkCommandBuffer& command, uint32_t imageIndex)
 
     /* The param names are really self-explanatory
         commandBuffer: the comand buffer
-    //! vertexCount: number of vertices (baked into shader, for now)
+        vertexCount: number of vertices (baked into shader, for now)
         instanceCount: number of instances
         firstVertex: starting vertex (defines lowest value of gl_VertexIndex)
         firstInstance: starting instance (defines lowest value of gl_InstanceIndex)
