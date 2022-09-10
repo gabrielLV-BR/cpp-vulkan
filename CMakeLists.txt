@@ -6,13 +6,14 @@ add_subdirectory(modules/glfw)
 
 add_executable(
     ${PROJECT_NAME}
-    "src/main.cpp"
-    "src/api/vkcontext.cpp"
-    "src/api/vkutils.cpp"
-    "src/api/components/vkshader.cpp"
-    "src/api/components/vkpipeline.cpp"
-    "src/utils/option.hpp"
-    "src/utils/file.hpp"
+    "${CMAKE_SOURCE_DIR}/src/main.cpp"
+    "${CMAKE_SOURCE_DIR}/src/api/vkcontext.cpp"
+    "${CMAKE_SOURCE_DIR}/src/api/vkcontext.hpp"
+    "${CMAKE_SOURCE_DIR}/src/api/vkutils.cpp"
+    "${CMAKE_SOURCE_DIR}/src/api/components/vkshader.cpp"
+    "${CMAKE_SOURCE_DIR}/src/api/components/vkpipeline.cpp"
+    "${CMAKE_SOURCE_DIR}/src/utils/option.hpp"
+    "${CMAKE_SOURCE_DIR}/src/utils/file.hpp"
 )
 
 target_compile_definitions(
