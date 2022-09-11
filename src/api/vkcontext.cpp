@@ -20,8 +20,6 @@ VulkanContext::VulkanContext(GLFWwindow *window)
     CreateImageView();
     CreatePipeline();
     CreateFramebuffers();
-    CreateCommandPool();
-    AllocateCommandBuffer();
 }
 
 VulkanContext::~VulkanContext()
@@ -38,9 +36,6 @@ VulkanContext::~VulkanContext()
     for(auto& imageView : imageViews) {
         vkDestroyImageView(device, imageView, nullptr);
     }
-
-    vkFreeCommandBuffers(device, commandPool, 1, &commandBuffer);
-    vkDestroyCommandPool(device, commandPool, nullptr);
 
     pipeline.Destroy(device);
     swapchain.Destroy(device);
@@ -450,38 +445,6 @@ void VulkanContext::CreateFramebuffers() {
     }
 }
 
-void VulkanContext::CreateCommandPool() {
-    VkCommandPoolCreateInfo commandPoolInfo{};
-    commandPoolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-    // These flags allow us to specify how we're going to use the
-    // command buffers
-    // Since we're going to be re-recording them each frame, we specify
-    // the CREATE_RESET bit, as to make Vulkan optimize for frequent records 
-    commandPoolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-    commandPoolInfo.queueFamilyIndex = familyIndices.graphics.value();
-
-    VK_ASSERT(
-        vkCreateCommandPool(device, &commandPoolInfo, nullptr, &commandPool)
-    );
-}
-
-void VulkanContext::AllocateCommandBuffer() {
-    VkCommandBufferAllocateInfo commandBufferInfo{};
-    commandBufferInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-    // A Command Buffer's level can be:
-    // - PRIMARY: It's passed directly to the command queue
-    // - SECONDARY: Can only be called from primary command 
-    commandBufferInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    commandBufferInfo.commandPool = commandPool;
-
-    // Here we specify the ammount of command buffers...
-    commandBufferInfo.commandBufferCount = 1;
-    //                         ...we're allocatting here in &commandBuffer
-    VK_ASSERT(
-        vkAllocateCommandBuffers(device, &commandBufferInfo, &commandBuffer)
-    );
-}
-
 VkViewport VulkanContext::GetViewport() {
     return VkViewport {
         .x = 0.0f,
@@ -498,71 +461,4 @@ VkRect2D VulkanContext::GetScissor() {
         .offset = { 0, 0 },
         .extent = swapchain.extent
     };
-}
-
-void VulkanContext::RecordCommand(VkCommandBuffer& command, uint32_t imageIndex) {
-
-    VkCommandBufferBeginInfo beginInfo{};
-    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-    // /* Optional */ beginInfo.flags            = 0; // Specify usage, won't matter for us right now
-    // /* Optional */ beginInfo.pInheritanceInfo = nullptr; // Specify primary buffer to inherit (only for secondary buffers)
-
-    VK_ASSERT(
-        vkBeginCommandBuffer(command, &beginInfo)
-    );
-
-    VkRenderPassBeginInfo passBeginInfo{};
-    passBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-    // Render area
-    passBeginInfo.renderArea.extent = swapchain.extent;
-    passBeginInfo.renderArea.offset = { 0, 0 };
-    //
-    passBeginInfo.renderPass = pipeline.renderPass;
-    passBeginInfo.framebuffer = frameBuffers[imageIndex];
-
-    VkClearValue clearColor {{{0.2f, 0.2f, 0.2f, 1.0f}}};
-
-    passBeginInfo.clearValueCount = 1;
-    passBeginInfo.pClearValues = &clearColor;
-
-    // The last parameter has to do with wheter we're gonna use secondary
-    // command buffers or not.
-    // If yes, we should use VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS
-    // If not, we should use VK_SUBPASS_CONTENTS_INLINE
-    vkCmdBeginRenderPass(command, &passBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
-
-    // All drawing commands begin with vkCmd*** and all return void
-    vkCmdBindPipeline(command, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.pipeline);
-
-    // VkViewport viewports[] = { GetViewport() };
-    // VkRect2D scissors[] = { GetScissor() };
-
-    VkViewport viewport{};
-    viewport.x = 0.0f;
-    viewport.y = 0.0f;
-    viewport.width = static_cast<float>(swapchain.extent.width);
-    viewport.height = static_cast<float>(swapchain.extent.height);
-    viewport.minDepth = 0.0f;
-    viewport.maxDepth = 1.0f;
-    vkCmdSetViewport(command, 0, 1, &viewport);
-
-    VkRect2D scissor{};
-    scissor.offset = { 0, 0 };
-    scissor.extent = swapchain.extent;
-    vkCmdSetScissor(command, 0, 1, &scissor);
-
-    /* The param names are really self-explanatory
-        commandBuffer: the comand buffer
-        vertexCount: number of vertices (baked into shader, for now)
-        instanceCount: number of instances
-        firstVertex: starting vertex (defines lowest value of gl_VertexIndex)
-        firstInstance: starting instance (defines lowest value of gl_InstanceIndex)
-    */
-    vkCmdDraw(command, 3, 1, 0, 0);
-
-    vkCmdEndRenderPass(command);
-
-    VK_ASSERT(
-        vkEndCommandBuffer(command)
-    );
 }

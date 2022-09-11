@@ -39,35 +39,28 @@ public:
     Swapchain swapchain;
     Pipeline pipeline;
 
-    VkCommandPool commandPool;
-    VkCommandBuffer commandBuffer;
-
     // Queues
     VkQueue graphicsQueue;
     VkQueue presentQueue;
+
+    std::vector<VkFramebuffer> frameBuffers;
+    QueueFamilyIndices familyIndices;
+
 private:
     VkInstance instance;
-
     VkPhysicalDevice physicalDevice;
-
     VkSurfaceKHR surface;
 
     std::vector<VkImageView> imageViews;
-    std::vector<VkFramebuffer> frameBuffers;
 
     // Debug
     VkDebugUtilsMessengerEXT debugMessenger;
     std::vector<const char*> activeLayers;
 
-    QueueFamilyIndices familyIndices;
-
 public:
     VulkanContext() = delete;
     VulkanContext(GLFWwindow* window);
     ~VulkanContext();
-
-    // For now, we'll leave this here
-    void RecordCommand(VkCommandBuffer&, uint32_t);
 
     VkViewport GetViewport();
     VkRect2D GetScissor();
@@ -82,8 +75,6 @@ private:
     void CreateImageView();
     void CreatePipeline();
     void CreateFramebuffers();
-    void CreateCommandPool();
-    void AllocateCommandBuffer();
     // Debug
     void CreateDebugMessenger();
     void PopulateDebugMessenger(VkDebugUtilsMessengerCreateInfoEXT&);

@@ -9,7 +9,6 @@ class Pipeline {
 private:
   ShaderModule vertexShaderModule;
   ShaderModule fragmentShaderModule;
-  
 
 public:
   VkPipeline pipeline;
