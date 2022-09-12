@@ -11,6 +11,7 @@ add_executable(
     "${CMAKE_SOURCE_DIR}/src/api/vkcontext.hpp"
     "${CMAKE_SOURCE_DIR}/src/api/vkutils.cpp"
     "${CMAKE_SOURCE_DIR}/src/api/components/vkshader.cpp"
+    "${CMAKE_SOURCE_DIR}/src/api/components/vkswapchain.cpp"
     "${CMAKE_SOURCE_DIR}/src/api/components/vkpipeline.cpp"
     "${CMAKE_SOURCE_DIR}/src/utils/option.hpp"
     "${CMAKE_SOURCE_DIR}/src/utils/file.hpp"

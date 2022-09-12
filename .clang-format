@@ -1,0 +1,12 @@
+BasedOnStyle: Google
+AlignEscapedNewlinesLeft: true
+AllowAllParametersOfDeclarationOnNextLine: false
+AllowShortBlocksOnASingleLine: false
+AllowShortFunctionsOnASingleLine: All
+AllowShortIfStatementsOnASingleLine: true
+AllowShortLoopsOnASingleLine: true
+AlwaysBreakBeforeMultilineStrings: true
+BinPackParameters: false
+BreakBeforeBinaryOperators: true
+BreakBeforeBraces: Stroustrup
+SpacesInParentheses: true
