@@ -1,4 +1,6 @@
-build
-modules
-.vscode
+modules/
+.vscode/
 src/resources/shaders/*.spv
+cmake-build-debug/
+build/
+.clang-format
