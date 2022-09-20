@@ -11,6 +11,10 @@
 #include <limits>
 #include <stdexcept>
 
+Swapchain::Swapchain() 
+  : handle(VK_NULL_HANDLE), format(VK_FORMAT_UNDEFINED), extent({}) 
+  {}
+
 Swapchain::Swapchain(
   GLFWwindow *window, 
   VkDevice device,

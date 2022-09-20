@@ -1,6 +1,11 @@
-modules/
+.idea/
 .vscode/
-src/resources/shaders/*.spv
+
+modules/
+
 cmake-build-debug/
 build/
+
+src/resources/shaders/*.spv
+
 .clang-format
