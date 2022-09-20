@@ -18,10 +18,21 @@ VulkanContext::VulkanContext( GLFWwindow* window )
   CreateSurface( window );
   PickPhysicalDevice();
   CreateLogicalDevice();
-  CreateSwapchain(window);
-  // CreateImageView();
-  CreatePipeline();
-  // CreateFramebuffers();
+
+  // Pipeline and Swapchain must be created together
+  pipeline = Pipeline( device );
+  swapchain = Swapchain(
+      window,
+      device,
+      physicalDevice,
+      surface
+  );
+
+  pipeline.CreateRenderPass( device, swapchain.format );
+  pipeline.CreatePipeline( device, GetViewport(), GetScissor() );
+
+  swapchain.CreateImageViews(device);
+  swapchain.CreateFrameBuffers(device, pipeline.renderPass);
 }
 
 VulkanContext::~VulkanContext()
@@ -139,9 +150,9 @@ void VulkanContext::PickPhysicalDevice()
     physicalDevices.data() 
   );
 
-  for ( auto device : physicalDevices ) {
-    if ( VkUtils::IsDeviceSuitable( device, surface ) ) {
-      physicalDevice = device;
+  for ( auto physDev : physicalDevices ) {
+    if ( VkUtils::IsDeviceSuitable( physDev, surface ) ) {
+      physicalDevice = physDev;
       break;
     }
   }
@@ -229,28 +240,6 @@ void VulkanContext::CreateLogicalDevice()
     0 /* because we're only using one queue for this family */,
     &presentQueue
   );
-}
-
-void VulkanContext::CreateSwapchain(GLFWwindow* window) {
-  swapchain = Swapchain(
-    window,
-    device,
-    physicalDevice,
-    surface
-  );
-
-  swapchain.CreateImageViews(device);
-  swapchain.CreateFrameBuffers(device, pipeline.renderPass);
-}
-
-// void VulkanContext::CreateImageView() {}
-// void VulkanContext::CreateFramebuffers() {}
-
-void VulkanContext::CreatePipeline()
-{
-  pipeline = Pipeline( device );
-  pipeline.CreateRenderPass( device, swapchain.format );
-  pipeline.CreatePipeline( device, GetViewport(), GetScissor() );
 }
 
 VkViewport VulkanContext::GetViewport()

@@ -3,13 +3,17 @@
 #include "./vkswapchain.hpp"
 
 #include "../vkcontext.hpp"
-#include "../vkutils.hpp"
 #include "../../utils/math.hpp"
 #include "../../utils/debug.hpp"
 
-#include <set>
 #include <limits>
 #include <stdexcept>
+
+Swapchain::Swapchain()
+ : extent({}), handle(VK_NULL_HANDLE), format(VK_FORMAT_UNDEFINED)
+ {
+   std::cout << "Default Constructor called\n";
+ }
 
 Swapchain::Swapchain(
   GLFWwindow *window, 
@@ -30,19 +34,20 @@ Swapchain::Swapchain(
   swapchainInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
   swapchainInfo.surface = surface;
 
-  // We need 3 informations to create the swapchain
+  // We need 3 information to create the swap-chain
 
   VkSurfaceFormatKHR surfaceFormat;
   { // Surface format
     // Default, in case we don't find any
     surfaceFormat = swapchainDetails.formats[0];
+
     // Search for the desired one
-    for (auto &format : swapchainDetails.formats)
+    for (auto &f : swapchainDetails.formats)
     {
-      if (format.format == VK_FORMAT_R8G8B8A8_SRGB &&
-        format.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
+      if (f.format == VK_FORMAT_R8G8B8A8_SRGB &&
+          f.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
       {
-        surfaceFormat = format;
+        surfaceFormat = f;
         break;
       }
     }
@@ -147,21 +152,24 @@ Swapchain::Swapchain(
   // Now, load all the images in that habitual way
 
   uint32_t swapchainImageCount;
-
-  vkGetSwapchainImagesKHR(
-    device, 
-    handle, 
-    &swapchainImageCount, 
-    nullptr
+  VK_ASSERT(
+      vkGetSwapchainImagesKHR(
+          device,
+          handle,
+          &swapchainImageCount,
+          nullptr
+      )
   );
-  
+
   images.resize(swapchainImageCount);
 
-  vkGetSwapchainImagesKHR(
-    device,
-    handle,
-    &swapchainImageCount,
-    images.data()
+  VK_ASSERT(
+      vkGetSwapchainImagesKHR(
+          device,
+          handle,
+          &swapchainImageCount,
+          images.data()
+      )
   );
 
   format = surfaceFormat.format;

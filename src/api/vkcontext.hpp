@@ -58,12 +58,12 @@ private:
     void CreateInstance();
     void PickPhysicalDevice();
     void CreateLogicalDevice();
-    void GetQueues();
+//    void GetQueues();
     void CreateSurface(GLFWwindow*);
-    void CreateSwapchain(GLFWwindow*);
-    void CreateImageView();
-    void CreatePipeline();
-    // void CreateFramebuffers();
+//    void CreateSwapchain(GLFWwindow*);
+//    void CreateImageView();
+//    void CreatePipeline();
+//    void CreateFramebuffers();
     // Debug
     void CreateDebugMessenger();
     void PopulateDebugMessenger(VkDebugUtilsMessengerCreateInfoEXT&);

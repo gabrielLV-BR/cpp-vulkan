@@ -32,7 +32,7 @@ void Pipeline::CreateRenderPass(VkDevice device, VkFormat format) {
   // We need to create some attachments first,
   // namely: `color` and `depth`
   VkAttachmentDescription colorDescriptor{};
-  colorDescriptor.format = format;
+  colorDescriptor.format = format == VK_FORMAT_UNDEFINED ?  VK_FORMAT_R8G8B8A8_SRGB : format;
   // No multisampling yet, so just 1 sample for now
   colorDescriptor.samples = VK_SAMPLE_COUNT_1_BIT;
 
@@ -106,7 +106,7 @@ void Pipeline::CreateRenderPass(VkDevice device, VkFormat format) {
   };
 
   // I was going to try to explain subpass dependencies, but this
-  // reddit post did it flawlessly so I'll just link it here
+  // reddit post did it flawlessly, so I'll just link it here
   // https://www.reddit.com/r/vulkan/comments/s80reu/comment/hth2uj9/?utm_source=share&utm_medium=web2x&context=3
   // Keep in mind 
 
@@ -127,7 +127,7 @@ void Pipeline::CreateRenderPass(VkDevice device, VkFormat format) {
     VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
   
   // We signal which outputs of this subpass are
-  // actually dependant on the srcStageMask
+  // actually dependent on the srcStageMask
   // (if we're just waiting for color, the vertex
   // shader could run in parallel just fine)
   subpassDep.dstStageMask =
@@ -172,17 +172,17 @@ void Pipeline::CreateRenderPass(VkDevice device, VkFormat format) {
 void Pipeline::CreatePipeline(VkDevice device, VkViewport viewport, VkRect2D scissor) {
 
   /*
-    Dynamic states allows us to specifies certain states
+    Dynamic states allows us to specify certain states
     of the pipeline that can be dynamically changed at runtime.
     Here, we've specified the VIEWPORT (which describes a cartesian
-    plane, of which we'll use its coordenates) and SCISSOR (specifies
+    plane, of which we'll use its coordinates) and SCISSOR (specifies
     the visible area of the viewport, allows us to "cut" the screen as
     to not show a certain region).
     If we didn't specify any dynamic states, we'd have to set them up
     right now, on pipeline creation.
     This creates a problem: if we were to change these values, for any
     reason, we'd have to recreate the entire pipeline just for that.
-    Although we WILL have to create many different pipelines, this would
+    Although we WILL have to create different pipelines, this would
     make it so we have many extremely similar pipelines, only differing
     in tiny aspects.
   */
