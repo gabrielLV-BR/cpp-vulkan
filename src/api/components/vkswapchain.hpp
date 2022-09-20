@@ -1,7 +1,6 @@
 #pragma once
 
 #include <vulkan/vulkan.h>
-#include "GLFW/glfw3.h"
 
 #include <vector>
 
@@ -15,9 +14,8 @@ struct Swapchain {
   VkFormat format;
   VkExtent2D extent;
 
-  Swapchain();
   Swapchain(
-    GLFWwindow* window,
+    GLFWwindow *window,
     VkDevice device,
     VkPhysicalDevice phyisicalDevice,
     VkSurfaceKHR surface
